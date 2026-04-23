@@ -1,6 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+
+// يضمن وجود profile للمستخدم قبل أي عملية — يُنشئه إن لم يكن موجوداً
+async function ensureProfile(userId: string) {
+  const supabase = createServerSupabaseClient();
+
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', userId)
+    .single();
+
+  if (existing) return; // موجود مسبقاً
+
+  // جلب بيانات المستخدم من Clerk لإنشاء الـ profile
+  const user = await currentUser();
+  const username =
+    user?.username ??
+    user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ??
+    `user_${userId.slice(-8)}`;
+
+  await supabase.from('profiles').upsert(
+    {
+      id: userId,
+      username,
+      avatar_url: user?.imageUrl ?? null,
+      total_points: 0,
+    },
+    { onConflict: 'id', ignoreDuplicates: true }
+  );
+}
 
 // GET — جلب توقعات المستخدم
 export async function GET(req: NextRequest) {
@@ -43,8 +73,8 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServerSupabaseClient();
 
-  // التأكد إن المباراة لم تبدأ بعد
-  // (يمكن إضافة التحقق من API هنا لاحقاً)
+  // إنشاء profile تلقائياً إن لم يكن موجوداً — يحل مشكلة foreign key
+  await ensureProfile(userId);
 
   const { data, error } = await supabase
     .from('predictions')

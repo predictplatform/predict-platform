@@ -15,7 +15,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        variables: { colorPrimary: '#2563eb' },
+        elements: {
+          // إخفاء حقل رقم الجوال من جميع النماذج
+          phoneNumberField: { display: 'none' },
+          phoneInputBox: { display: 'none' },
+        },
+      }}
+    >
       <html lang="ar" dir="rtl">
         <body>
           <Navbar />

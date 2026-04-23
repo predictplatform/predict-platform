@@ -2,10 +2,12 @@
 -- منصة التوقعات — Supabase Schema
 -- انسخ هذا الكود في Supabase SQL Editor
 -- ============================================
+-- ملاحظة: profiles.id و predictions.user_id من نوع text
+-- لأن Clerk يعطي IDs بصيغة "user_xxx" وليس UUID
 
 -- جدول المستخدمين
 CREATE TABLE profiles (
-  id uuid PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
+  id text PRIMARY KEY,           -- Clerk user ID (مثال: user_3Clte6IEo8cubTAgAQWAX4p3HW4)
   username text UNIQUE NOT NULL,
   avatar_url text,
   total_points integer DEFAULT 0,
@@ -15,7 +17,7 @@ CREATE TABLE profiles (
 -- جدول التوقعات
 CREATE TABLE predictions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id text NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   match_id text NOT NULL,
   home_goals integer NOT NULL CHECK (home_goals BETWEEN 0 AND 15),
   away_goals integer NOT NULL CHECK (away_goals BETWEEN 0 AND 15),
@@ -25,9 +27,6 @@ CREATE TABLE predictions (
 );
 
 -- ملاحظة: نستخدم Clerk للمصادقة + Supabase Secret Key (service role) في API Routes
--- هذا يعني أن API Routes تتجاوز RLS بشكل آمن من الخادم
--- RLS مُفعَّل للحماية من الاستخدام المباشر للـ anon key
-
 ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
@@ -35,14 +34,14 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY 'public read profiles' ON profiles
   FOR SELECT USING (true);
 
--- منع الكتابة المباشرة من الـ anon key (كل الكتابة تمر من API Routes بـ service role)
+-- منع الكتابة المباشرة من الـ anon key
 CREATE POLICY 'no direct insert profiles' ON profiles
   FOR INSERT WITH CHECK (false);
 
 CREATE POLICY 'no direct update profiles' ON profiles
   FOR UPDATE USING (false);
 
--- السماح للكل بقراءة predictions المنتهية (للإحصائيات)
+-- السماح للكل بقراءة predictions المنتهية
 CREATE POLICY 'public read finished predictions' ON predictions
   FOR SELECT USING (points_earned IS NOT NULL);
 
