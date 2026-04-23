@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  min-height: 100vh;
+}
+
+@layer components {
+  .card {
+    @apply bg-slate-800 rounded-xl border border-slate-700 p-4;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .badge-gold {
+    @apply bg-amber-500 text-black text-xs font-bold px-2 py-0.5 rounded-full;
+  }
+
+  .league-tag {
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
