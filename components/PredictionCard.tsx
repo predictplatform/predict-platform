@@ -3,8 +3,10 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { ScoreInput } from './ScoreInput';
+import { PredictionStats } from './PredictionStats';
 import { FixtureData, formatMatchTime, LEAGUES } from '@/lib/football-api';
 import { getPointsLabel, getPointsColor } from '@/lib/points';
+import type { MatchStats } from '@/app/api/predictions/stats/route';
 
 interface Props {
   fixture: FixtureData;
@@ -14,9 +16,10 @@ interface Props {
     points_earned: number | null;
   } | null;
   onSubmit: (matchId: string, homeGoals: number, awayGoals: number) => Promise<void>;
+  stats?: MatchStats | null;
 }
 
-export function PredictionCard({ fixture, existingPrediction, onSubmit }: Props) {
+export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }: Props) {
   const [homeGoals, setHomeGoals] = useState(existingPrediction?.home_goals ?? 0);
   const [awayGoals, setAwayGoals] = useState(existingPrediction?.away_goals ?? 0);
   const [loading, setLoading] = useState(false);
@@ -136,6 +139,14 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit }: Props)
         <div className="mt-3 text-center text-xs text-red-400">
           انطلقت المباراة — التوقع مغلق
         </div>
+      )}
+
+      {stats !== undefined && (
+        <PredictionStats
+          stats={stats ?? { match_id: String(fixture.fixture.id), home: 0, draw: 0, away: 0, total: 0 }}
+          homeTeam={fixture.teams.home.name}
+          awayTeam={fixture.teams.away.name}
+        />
       )}
     </div>
   );

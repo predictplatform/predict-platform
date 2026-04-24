@@ -5,6 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { PredictionCard } from '@/components/PredictionCard';
 import { FixtureData, LEAGUES, LeagueKey } from '@/lib/football-api';
 import { Prediction } from '@/lib/supabase';
+import type { MatchStats } from '@/app/api/predictions/stats/route';
 import Link from 'next/link';
 
 export default function PredictPage() {
@@ -15,6 +16,7 @@ export default function PredictPage() {
   const [selectedLeague, setSelectedLeague] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'my-predictions'>('upcoming');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [matchStats, setMatchStats] = useState<Record<string, MatchStats>>({});
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
@@ -45,6 +47,20 @@ export default function PredictPage() {
       );
 
       setFixtures(relevant);
+
+      // جلب إحصائيات التوقعات لكل المباريات
+      if (relevant.length > 0) {
+        const ids = relevant.map((f: FixtureData) => String(f.fixture.id)).join(',');
+        try {
+          const statsRes = await fetch(`/api/predictions/stats?match_ids=${ids}`);
+          const statsData: MatchStats[] = await statsRes.json();
+          const statsMap: Record<string, MatchStats> = {};
+          statsData.forEach(s => { statsMap[s.match_id] = s; });
+          setMatchStats(statsMap);
+        } catch {
+          // ignore stats errors
+        }
+      }
     } catch {
       setFixtures([]);
     } finally {
@@ -190,6 +206,7 @@ export default function PredictPage() {
                 fixture={fixture}
                 existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
                 onSubmit={handleSubmit}
+                stats={matchStats[String(fixture.fixture.id)] ?? null}
               />
             ))}
           </div>
@@ -208,6 +225,7 @@ export default function PredictPage() {
                 fixture={fixture}
                 existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
                 onSubmit={handleSubmit}
+                stats={matchStats[String(fixture.fixture.id)] ?? null}
               />
             ))}
           </div>
