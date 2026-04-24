@@ -23,7 +23,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-white font-black text-xl">
           <span className="text-2xl">⚽</span>
-          <span>منصة التوقعات</span>
+          <span>دوري التوقعات</span>
         </Link>
 
         {/* Navigation Links */}

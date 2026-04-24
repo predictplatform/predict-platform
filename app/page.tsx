@@ -18,7 +18,7 @@ export default async function HomePage() {
       {/* Hero */}
       <section className="text-center py-10 mb-8">
         <h1 className="text-4xl md:text-5xl font-black text-white mb-3">
-          ⚽ منصة التوقعات
+          ⚽ دوري التوقعات
         </h1>
         <p className="text-slate-400 text-lg max-w-xl mx-auto">
           توقع نتائج مباريات كرة القدم بدقة، اجمع النقاط، وتنافس مع الجميع
