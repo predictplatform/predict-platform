@@ -96,19 +96,23 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction }
 
       {/* توقع المستخدم (إن وجد) */}
       {userPrediction && (
-        <div className="mt-3 pt-3 border-t border-slate-700 flex items-center justify-between">
-          <span className="text-xs text-slate-400">توقعك:</span>
-          <span className="text-sm font-bold text-blue-400">
-            {userPrediction.home_goals} - {userPrediction.away_goals}
-          </span>
-          {userPrediction.points_earned !== null && (
-            <span className={`text-sm font-bold ${
-              userPrediction.points_earned === 5 ? 'text-amber-400' :
-              userPrediction.points_earned >= 3 ? 'text-green-400' : 'text-red-400'
-            }`}>
-              +{userPrediction.points_earned} نقطة
+        <div className="mt-3 pt-3 border-t border-slate-700">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400">توقعك:</span>
+            <span className="text-sm font-bold text-blue-400">
+              {userPrediction.home_goals} - {userPrediction.away_goals}
             </span>
-          )}
+            {userPrediction.points_earned !== null ? (
+              <span className={`text-sm font-bold ${
+                userPrediction.points_earned === 5 ? 'text-amber-400' :
+                userPrediction.points_earned >= 3 ? 'text-green-400' : 'text-red-400'
+              }`}>
+                +{userPrediction.points_earned} نقطة
+              </span>
+            ) : (
+              <span className="text-xs text-slate-500">تم تسجيل توقعك ✓</span>
+            )}
+          </div>
         </div>
       )}
 
