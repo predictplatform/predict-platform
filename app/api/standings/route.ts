@@ -8,9 +8,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const standings = await getStandings(league, season);
-    return NextResponse.json(standings ?? []);
+    return NextResponse.json(standings ?? [], {
+      headers: {
+        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600', // 30 دقيقة
+      },
+    });
   } catch (err) {
     console.error('Standings API error:', err);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json([]);
   }
 }

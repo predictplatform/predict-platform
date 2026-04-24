@@ -8,9 +8,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const data = await getTopScorers(league, season);
-    return NextResponse.json(data ?? []);
+    return NextResponse.json(data ?? [], {
+      headers: {
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200', // ساعة
+      },
+    });
   } catch (err) {
     console.error('Stats API error:', err);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json([]);
   }
 }

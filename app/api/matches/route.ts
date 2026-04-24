@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFixturesByDate } from '@/lib/football-api';
+import { getFixturesByDate, getCacheHeader } from '@/lib/football-api';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -9,10 +9,13 @@ export async function GET(req: NextRequest) {
   try {
     const fixtures = await getFixturesByDate(date, league);
     return NextResponse.json(fixtures ?? [], {
-      headers: { 'Cache-Control': 'no-store' },
+      headers: {
+        // حية → دقيقتان | غير حية → 5 دقائق
+        'Cache-Control': getCacheHeader(fixtures ?? []),
+      },
     });
   } catch (err) {
     console.error('Matches API error:', err);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json([]);
   }
 }

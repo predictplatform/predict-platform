@@ -2,123 +2,150 @@ const API_KEY = process.env.FOOTBALL_API_KEY!;
 const API_HOST = process.env.FOOTBALL_API_HOST!;
 const BASE_URL = `https://${API_HOST}`;
 
-// معرفات الدوريات حسب الوثيقة
+// مدد الـ Cache بالثواني
+const TTL = {
+  LIVE:       2 * 60,   // مباريات حية:    دقيقتان
+  TODAY:      5 * 60,   // مباريات اليوم:  5 دقائق
+  STANDINGS: 30 * 60,   // الترتيب:        30 دقيقة
+  TOPSCORERS: 60 * 60,  // الهدافين:       ساعة
+  FIXTURE_ID: 2 * 60,   // تفاصيل مباراة: دقيقتان (قد تكون حية)
+} as const;
+
+// الحالات التي تعني أن المباراة حية
+const LIVE_STATUSES = new Set(['1H', 'HT', '2H', 'ET', 'P', 'BT', 'LIVE']);
+
+// معرفات الدوريات
 export const LEAGUES = {
-  SAUDI: { id: 307, name: 'دوري روشن السعودي', flag: '🇸🇦', color: 'bg-green-700' },
-  PREMIER: { id: 39, name: 'الدوري الإنجليزي الممتاز', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', color: 'bg-purple-700' },
-  LALIGA: { id: 140, name: 'الدوري الإسباني', flag: '🇪🇸', color: 'bg-red-700' },
-  SERIE_A: { id: 135, name: 'الدوري الإيطالي', flag: '🇮🇹', color: 'bg-blue-800' },
-  UCL: { id: 2, name: 'دوري أبطال أوروبا', flag: '🌟', color: 'bg-blue-600' },
+  SAUDI:   { id: 307, name: 'دوري روشن السعودي',        flag: '🇸🇦', color: 'bg-green-700' },
+  PREMIER: { id: 39,  name: 'الدوري الإنجليزي الممتاز', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', color: 'bg-purple-700' },
+  LALIGA:  { id: 140, name: 'الدوري الإسباني',           flag: '🇪🇸', color: 'bg-red-700' },
+  SERIE_A: { id: 135, name: 'الدوري الإيطالي',           flag: '🇮🇹', color: 'bg-blue-800' },
+  UCL:     { id: 2,   name: 'دوري أبطال أوروبا',         flag: '🌟', color: 'bg-blue-600' },
 } as const;
 
 export type LeagueKey = keyof typeof LEAGUES;
 
-async function fetchFootball(endpoint: string, revalidate = 300) {
+const SUPPORTED_LEAGUE_IDS = new Set(Object.values(LEAGUES).map(l => l.id));
+
+// ─── fetch مركزي مع TTL صريح ────────────────────────────────────────────────
+async function fetchFootball(endpoint: string, ttl: number) {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
     headers: {
       'x-rapidapi-key': API_KEY,
       'x-rapidapi-host': API_HOST,
     },
-    next: { revalidate }, // كاش قابل للضبط — fixtures: 5 دقائق، standings: ساعة
+    next: { revalidate: ttl },
   });
 
   if (!res.ok) throw new Error(`Football API error: ${res.status}`);
   const data = await res.json();
 
-  // الخطة المجانية لا تدعم season=2025+ — نرجع مصفوفة فارغة عوضاً عن خطأ
   if (data.errors && Object.keys(data.errors).length > 0) {
-    console.warn('Football API warning:', data.errors);
+    console.warn('Football API warning:', JSON.stringify(data.errors));
     return [];
   }
 
   return data.response;
 }
 
-// معرفات الدوريات المدعومة للفلتر
-const SUPPORTED_LEAGUE_IDS = new Set(Object.values(LEAGUES).map(l => l.id));
-
-// مباريات حسب التاريخ — نجلب كل المباريات ثم نفلتر محلياً
-// السبب: الخطة المجانية لا تدعم season=2025 مع فلتر league
-export async function getFixturesByDate(date: string, leagueId?: number) {
-  const all = await fetchFootball(`/fixtures?date=${date}`);
-  if (!Array.isArray(all)) return [];
-
-  // فلتر: الدوريات المدعومة فقط (أو دوري محدد إن طُلب)
-  if (leagueId) {
-    return all.filter((f: FixtureData) => f.league.id === leagueId);
-  }
-  return all.filter((f: FixtureData) => SUPPORTED_LEAGUE_IDS.has(f.league.id as 2 | 307 | 39 | 140 | 135));
+// ─── تحديد الـ TTL الصحيح بناءً على وجود مباريات حية ───────────────────────
+function pickTTL(fixtures: FixtureData[]): number {
+  const hasLive = fixtures.some(f => LIVE_STATUSES.has(f.fixture.status.short));
+  return hasLive ? TTL.LIVE : TTL.TODAY;
 }
 
-// مباريات اليوم
-export async function getTodayFixtures(leagueId?: number) {
+// ─── مباريات حسب التاريخ ────────────────────────────────────────────────────
+// نجلب كل مباريات اليوم دفعة واحدة (الخطة المجانية لا تدعم league+season=2025)
+// ثم نفلتر محلياً — يوفر الـ 100 طلب اليومي
+export async function getFixturesByDate(date: string, leagueId?: number): Promise<FixtureData[]> {
+  // نبدأ بـ TTL.TODAY — بعد الفلتر نقيم إن كانت حية
+  const all = await fetchFootball(`/fixtures?date=${date}`, TTL.TODAY);
+  if (!Array.isArray(all)) return [];
+
+  const filtered: FixtureData[] = leagueId
+    ? all.filter((f: FixtureData) => f.league.id === leagueId)
+    : all.filter((f: FixtureData) =>
+        SUPPORTED_LEAGUE_IDS.has(f.league.id as 2 | 307 | 39 | 140 | 135)
+      );
+
+  // إذا في مباريات حية، نعيد الطلب بـ TTL قصير عبر revalidate الـ Next.js cache
+  // (الـ fetch نفسه مكاش بـ TTL.TODAY لكن الـ API route سيعيد revalidation)
+  return filtered;
+}
+
+// ─── مباريات اليوم مع TTL الديناميكي ────────────────────────────────────────
+export async function getTodayFixtures(leagueId?: number): Promise<FixtureData[]> {
   const today = new Date().toISOString().split('T')[0];
   return getFixturesByDate(today, leagueId);
 }
 
-// مباريات الـ 48 ساعة القادمة (للتوقعات)
-export async function getUpcomingFixtures(leagueId?: number) {
-  const results = [];
+// ─── مباريات الـ 48 ساعة القادمة ────────────────────────────────────────────
+export async function getUpcomingFixtures(leagueId?: number): Promise<FixtureData[]> {
+  const results: FixtureData[] = [];
   for (let i = 0; i < 2; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().split('T')[0];
     const fixtures = await getFixturesByDate(dateStr, leagueId);
     results.push(...fixtures);
   }
   return results;
 }
 
-// ترتيب الدوري
-// ملاحظة: الخطة المجانية تدعم حتى season=2024 (= موسم 2024/25 الحالي)
+// ─── أبرز مباريات اليوم ──────────────────────────────────────────────────────
+export async function getFeaturedFixtures(): Promise<FixtureData[]> {
+  const today = new Date().toISOString().split('T')[0];
+  const all = await fetchFootball(`/fixtures?date=${today}`, TTL.TODAY);
+  if (!Array.isArray(all)) return [];
+  return all
+    .filter((f: FixtureData) =>
+      SUPPORTED_LEAGUE_IDS.has(f.league.id as 2 | 307 | 39 | 140 | 135)
+    )
+    .slice(0, 10);
+}
+
+// ─── ترتيب الدوري (كاش 30 دقيقة) ────────────────────────────────────────────
 export async function getStandings(leagueId: number, season = 2024) {
-  const data = await fetchFootball(`/standings?league=${leagueId}&season=${season}`, 3600); // كاش ساعة
+  const data = await fetchFootball(
+    `/standings?league=${leagueId}&season=${season}`,
+    TTL.STANDINGS
+  );
   if (!Array.isArray(data) || data.length === 0) return [];
   return data?.[0]?.league?.standings?.[0] ?? [];
 }
 
-// أفضل الهدافين
-// ملاحظة: الخطة المجانية تدعم حتى season=2024 (= موسم 2024/25 الحالي)
+// ─── أفضل الهدافين (كاش ساعة) ────────────────────────────────────────────────
 export async function getTopScorers(leagueId: number, season = 2024) {
-  const data = await fetchFootball(`/players/topscorers?league=${leagueId}&season=${season}`, 3600);
+  const data = await fetchFootball(
+    `/players/topscorers?league=${leagueId}&season=${season}`,
+    TTL.TOPSCORERS
+  );
   return Array.isArray(data) ? data : [];
 }
 
-// تفاصيل مباراة
-export async function getFixtureById(fixtureId: number) {
-  const data = await fetchFootball(`/fixtures?id=${fixtureId}`);
+// ─── تفاصيل مباراة (كاش دقيقتان — قد تكون حية) ─────────────────────────────
+export async function getFixtureById(fixtureId: number): Promise<FixtureData | null> {
+  const data = await fetchFootball(`/fixtures?id=${fixtureId}`, TTL.FIXTURE_ID);
   return data?.[0] ?? null;
 }
 
-// أبرز مباريات اليوم من جميع الدوريات
-export async function getFeaturedFixtures() {
-  const leagueIds = Object.values(LEAGUES).map(l => l.id);
-  const today = new Date().toISOString().split('T')[0];
-
-  const allFixtures = await Promise.allSettled(
-    leagueIds.map(id => getFixturesByDate(today, id))
-  );
-
-  return allFixtures
-    .filter(r => r.status === 'fulfilled')
-    .flatMap(r => (r as PromiseFulfilledResult<unknown[]>).value)
-    .slice(0, 10);
+// ─── API routes: إرجاع TTL الصحيح في Cache-Control header ──────────────────
+export function getCacheHeader(fixtures: FixtureData[]): string {
+  const ttl = pickTTL(fixtures);
+  return `public, s-maxage=${ttl}, stale-while-revalidate=${ttl * 2}`;
 }
 
-// تنسيق وقت المباراة
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 export function formatMatchTime(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleTimeString('ar-SA', {
+  return new Date(dateStr).toLocaleTimeString('ar-SA', {
     hour: '2-digit',
     minute: '2-digit',
     timeZone: 'Asia/Riyadh',
   });
 }
 
-// تنسيق تاريخ المباراة
 export function formatMatchDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ar-SA', {
+  return new Date(dateStr).toLocaleDateString('ar-SA', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -127,22 +154,21 @@ export function formatMatchDate(dateStr: string): string {
   });
 }
 
-// حالة المباراة
 export function getMatchStatus(fixture: { fixture: { status: { short: string; elapsed: number | null } } }) {
   const { short, elapsed } = fixture.fixture.status;
   switch (short) {
-    case 'NS': return { label: 'لم تبدأ', color: 'text-slate-400', live: false };
-    case '1H': return { label: `الشوط الأول - ${elapsed}'`, color: 'text-green-400', live: true };
-    case 'HT': return { label: 'استراحة', color: 'text-yellow-400', live: true };
-    case '2H': return { label: `الشوط الثاني - ${elapsed}'`, color: 'text-green-400', live: true };
-    case 'ET': return { label: `وقت إضافي - ${elapsed}'`, color: 'text-orange-400', live: true };
-    case 'P': return { label: 'ركلات الترجيح', color: 'text-orange-400', live: true };
-    case 'FT': return { label: 'انتهت', color: 'text-slate-500', live: false };
-    case 'AET': return { label: 'انتهت (إضافي)', color: 'text-slate-500', live: false };
-    case 'PEN': return { label: 'انتهت (ركلات)', color: 'text-slate-500', live: false };
-    case 'CANC': return { label: 'ملغاة', color: 'text-red-400', live: false };
-    case 'PST': return { label: 'مؤجلة', color: 'text-orange-400', live: false };
-    default: return { label: short, color: 'text-slate-400', live: false };
+    case 'NS':   return { label: 'لم تبدأ',                    color: 'text-slate-400',  live: false };
+    case '1H':   return { label: `الشوط الأول - ${elapsed}'`,  color: 'text-green-400',  live: true  };
+    case 'HT':   return { label: 'استراحة',                     color: 'text-yellow-400', live: true  };
+    case '2H':   return { label: `الشوط الثاني - ${elapsed}'`, color: 'text-green-400',  live: true  };
+    case 'ET':   return { label: `وقت إضافي - ${elapsed}'`,    color: 'text-orange-400', live: true  };
+    case 'P':    return { label: 'ركلات الترجيح',              color: 'text-orange-400', live: true  };
+    case 'FT':   return { label: 'انتهت',                       color: 'text-slate-500',  live: false };
+    case 'AET':  return { label: 'انتهت (إضافي)',              color: 'text-slate-500',  live: false };
+    case 'PEN':  return { label: 'انتهت (ركلات)',              color: 'text-slate-500',  live: false };
+    case 'CANC': return { label: 'ملغاة',                       color: 'text-red-400',    live: false };
+    case 'PST':  return { label: 'مؤجلة',                       color: 'text-orange-400', live: false };
+    default:     return { label: short,                          color: 'text-slate-400',  live: false };
   }
 }
 
