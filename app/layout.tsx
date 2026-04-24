@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import { PushInit } from '@/components/PushInit';
 
 export const metadata: Metadata = {
   title: 'دوري التوقعات | Football Predictions',
@@ -28,6 +29,7 @@ export default function RootLayout({
       <html lang="ar" dir="rtl">
         <body>
           <Navbar />
+          <PushInit />
           <main className="min-h-screen bg-slate-900">
             {children}
           </main>
