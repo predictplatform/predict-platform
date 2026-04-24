@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import { useUser } from '@clerk/nextjs';
 import { MatchCard } from '@/components/MatchCard';
 import { LEAGUES, FixtureData, LeagueKey } from '@/lib/football-api';
+import { Prediction } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
 
 type FilterStatus = 'all' | 'live' | 'upcoming' | 'finished';
@@ -18,12 +20,14 @@ function toLocalISODate(d: Date): string {
 function MatchesContent() {
   const searchParams = useSearchParams();
   const initialLeague = searchParams.get('league') ? Number(searchParams.get('league')) : null;
+  const { isSignedIn } = useUser();
 
   const [fixtures, setFixtures] = useState<FixtureData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLeague, setSelectedLeague] = useState<number | null>(initialLeague);
   const [selectedDate, setSelectedDate] = useState(() => toLocalISODate(new Date()));
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [predMap, setPredMap] = useState<Record<string, Prediction>>({});
 
   useEffect(() => {
     const fetchFixtures = async () => {
@@ -32,11 +36,23 @@ function MatchesContent() {
         const params = new URLSearchParams({ date: selectedDate });
         if (selectedLeague) params.set('league', String(selectedLeague));
 
-        // cache: 'no-store' لمنع الـ browser من إعادة الكاش القديم
         const res = await fetch(`/api/matches?${params}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('fetch failed');
-        const data = await res.json();
+        const data: FixtureData[] = await res.json();
         setFixtures(Array.isArray(data) ? data : []);
+
+        // جلب توقعات المستخدم للمباريات الظاهرة
+        if (isSignedIn && data.length > 0) {
+          try {
+            const predsRes = await fetch('/api/predictions');
+            const preds: Prediction[] = await predsRes.json();
+            const map: Record<string, Prediction> = {};
+            preds.forEach(p => { map[p.match_id] = p; });
+            setPredMap(map);
+          } catch {
+            // ignore
+          }
+        }
       } catch {
         setFixtures([]);
       } finally {
@@ -44,7 +60,7 @@ function MatchesContent() {
       }
     };
     fetchFixtures();
-  }, [selectedDate, selectedLeague]);
+  }, [selectedDate, selectedLeague, isSignedIn]);
 
   const filtered = fixtures.filter((f) => {
     const s = f.fixture.status.short;
@@ -147,7 +163,12 @@ function MatchesContent() {
       ) : filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((fixture) => (
-            <MatchCard key={fixture.fixture.id} fixture={fixture} showPredictButton />
+            <MatchCard
+              key={fixture.fixture.id}
+              fixture={fixture}
+              showPredictButton
+              userPrediction={predMap[String(fixture.fixture.id)] ?? null}
+            />
           ))}
         </div>
       ) : (
