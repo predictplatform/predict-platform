@@ -11,6 +11,7 @@ const navLinks = [
   { href: '/predict', label: 'توقعاتي' },
   { href: '/leaderboard', label: 'الليدربورد' },
   { href: '/stats', label: 'الإحصائيات' },
+  { href: '/profile', label: 'ملفي' },
 ];
 
 export default function Navbar() {
