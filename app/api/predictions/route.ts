@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
+import { getFixtureById } from '@/lib/football-api';
+
+// الحالات التي تمنع التوقع (بدأت أو انتهت)
+const BLOCKED_STATUSES = new Set([
+  '1H', 'HT', '2H', 'ET', 'BT', 'P', 'INT', 'LIVE',
+  'FT', 'AET', 'PEN',
+  'SUSP', 'PST', 'CANC', 'ABD', 'AWD', 'WO',
+]);
 
 // يضمن وجود profile للمستخدم قبل أي عملية — يُنشئه إن لم يكن موجوداً
 async function ensureProfile(userId: string) {
@@ -69,6 +77,22 @@ export async function POST(req: NextRequest) {
 
   if (home_goals < 0 || home_goals > 15 || away_goals < 0 || away_goals > 15) {
     return NextResponse.json({ error: 'Goals must be between 0 and 15' }, { status: 400 });
+  }
+
+  // التحقق من حالة المباراة — رفض التوقع إن بدأت أو انتهت
+  try {
+    const fixture = await getFixtureById(Number(match_id));
+    if (fixture) {
+      const status = fixture.fixture.status.short;
+      if (BLOCKED_STATUSES.has(status)) {
+        return NextResponse.json(
+          { error: 'انتهى وقت التوقع — المباراة بدأت أو انتهت' },
+          { status: 403 }
+        );
+      }
+    }
+  } catch {
+    // في حال فشل جلب المباراة، نكمل (fail open — لا نمنع بسبب خطأ API)
   }
 
   const supabase = createServerSupabaseClient();
