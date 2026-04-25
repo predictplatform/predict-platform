@@ -19,6 +19,8 @@ export type Profile = {
   username: string;
   avatar_url: string | null;
   total_points: number;
+  favorite_team: string | null;
+  profile_complete: boolean;
   created_at: string;
 };
 

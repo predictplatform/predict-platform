@@ -6,18 +6,23 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import type { ProfileStats } from '@/app/api/profile/stats/route';
 
+type ProfileData = { username: string; favorite_team: string | null; profile_complete: boolean };
+
 export default function ProfilePage() {
   const { isSignedIn, user } = useUser();
   const [stats, setStats] = useState<ProfileStats | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isSignedIn) return;
-    fetch('/api/profile/stats')
-      .then(r => r.json())
-      .then(setStats)
-      .catch(() => setStats(null))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch('/api/profile/stats').then(r => r.json()),
+      fetch('/api/profile/me').then(r => r.json()),
+    ]).then(([s, p]) => {
+      setStats(s);
+      setProfile(p);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [isSignedIn]);
 
   if (!isSignedIn) {
@@ -33,12 +38,20 @@ export default function ProfilePage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       {/* بطاقة المستخدم */}
-      <div className="card flex items-center gap-4 mb-6">
-        <UserButton />
-        <div>
-          <p className="text-white font-black text-xl">{user?.username ?? user?.firstName ?? 'مستخدم'}</p>
-          <p className="text-slate-400 text-sm">{user?.emailAddresses?.[0]?.emailAddress}</p>
+      <div className="card flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4">
+          <UserButton />
+          <div>
+            <p className="text-white font-black text-xl">{profile?.username ?? user?.username ?? user?.firstName ?? 'مستخدم'}</p>
+            {profile?.favorite_team && (
+              <p className="text-slate-400 text-sm">❤️ {profile.favorite_team}</p>
+            )}
+            <p className="text-slate-500 text-xs mt-0.5">{user?.emailAddresses?.[0]?.emailAddress}</p>
+          </div>
         </div>
+        <Link href="/setup" className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0">
+          تعديل الملف
+        </Link>
       </div>
 
       {loading ? (

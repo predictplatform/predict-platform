@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import { PushInit } from '@/components/PushInit';
+import { ProfileSetupBanner } from '@/components/ProfileSetupBanner';
 
 export const metadata: Metadata = {
   title: 'دوري التوقعات | Football Predictions',
@@ -30,6 +31,7 @@ export default function RootLayout({
       <html lang="ar" dir="rtl">
         <body>
           <Navbar />
+          <ProfileSetupBanner />
           <PushInit />
           <main className="min-h-screen bg-slate-900">
             {children}
