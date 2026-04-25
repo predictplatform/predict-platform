@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 import { LeaderboardTable } from '@/components/Leaderboard';
 import { Profile } from '@/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
@@ -104,7 +105,7 @@ export default function LeaderboardPage() {
       {!loading && entries.length >= 3 && (
         <div className="flex items-end justify-center gap-4 mb-8">
           {/* المركز الثاني */}
-          <div className="flex flex-col items-center gap-2">
+          <Link href={`/u/${encodeURIComponent(entries[1]?.username ?? '')}`} className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center text-xl font-black text-slate-200">
               {entries[1]?.username[0]?.toUpperCase()}
             </div>
@@ -115,10 +116,10 @@ export default function LeaderboardPage() {
               <span className="text-xl">🥈</span>
               <span className="text-xs font-bold text-slate-300">{entries[1]?.total_points}</span>
             </div>
-          </div>
+          </Link>
 
           {/* المركز الأول */}
-          <div className="flex flex-col items-center gap-2">
+          <Link href={`/u/${encodeURIComponent(entries[0]?.username ?? '')}`} className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-14 h-14 rounded-full bg-amber-500 flex items-center justify-center text-2xl font-black text-white">
               {entries[0]?.username[0]?.toUpperCase()}
             </div>
@@ -129,10 +130,10 @@ export default function LeaderboardPage() {
               <span className="text-2xl">🥇</span>
               <span className="text-sm font-black text-white">{entries[0]?.total_points}</span>
             </div>
-          </div>
+          </Link>
 
           {/* المركز الثالث */}
-          <div className="flex flex-col items-center gap-2">
+          <Link href={`/u/${encodeURIComponent(entries[2]?.username ?? '')}`} className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-12 h-12 rounded-full bg-amber-800 flex items-center justify-center text-xl font-black text-amber-200">
               {entries[2]?.username[0]?.toUpperCase()}
             </div>
@@ -143,7 +144,7 @@ export default function LeaderboardPage() {
               <span className="text-xl">🥉</span>
               <span className="text-xs font-bold text-amber-200">{entries[2]?.total_points}</span>
             </div>
-          </div>
+          </Link>
         </div>
       )}
 

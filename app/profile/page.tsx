@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { ProfileStats } from '@/app/api/profile/stats/route';
 
 type ProfileData = { username: string; favorite_team: string | null; profile_complete: boolean };
 
 export default function ProfilePage() {
   const { isSignedIn, user } = useUser();
+  const router = useRouter();
   const [stats, setStats] = useState<ProfileStats | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,8 +24,10 @@ export default function ProfilePage() {
     ]).then(([s, p]) => {
       setStats(s);
       setProfile(p);
+      // إعادة التوجيه للبروفايل العام بعد تحميل الاسم
+      if (p?.username) router.replace(`/u/${encodeURIComponent(p.username)}`);
     }).catch(() => {}).finally(() => setLoading(false));
-  }, [isSignedIn]);
+  }, [isSignedIn, router]);
 
   if (!isSignedIn) {
     return (
@@ -49,7 +53,7 @@ export default function ProfilePage() {
             <p className="text-slate-500 text-xs mt-0.5">{user?.emailAddresses?.[0]?.emailAddress}</p>
           </div>
         </div>
-        <Link href="/setup" className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0">
+        <Link href="/setup?edit=1" className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0">
           تعديل الملف
         </Link>
       </div>

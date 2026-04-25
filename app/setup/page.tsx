@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { FAVORITE_TEAMS } from '@/lib/teams';
 
-export default function SetupPage() {
+function SetupContent() {
   const { isSignedIn, user } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isEditing = searchParams.get('edit') === '1';
 
   const [username, setUsername] = useState('');
   const [favoriteTeam, setFavoriteTeam] = useState('');
@@ -15,28 +18,35 @@ export default function SetupPage() {
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(true);
 
-  // اقتراح اسم مستخدم من بيانات Clerk
-  useEffect(() => {
-    if (user) {
-      const suggested = user.username
-        ?? user.firstName
-        ?? user.emailAddresses?.[0]?.emailAddress?.split('@')[0]
-        ?? '';
-      setUsername(suggested);
-    }
-  }, [user]);
-
-  // إذا أكمل الملف مسبقاً، اعيد توجيهه
+  // اقتراح اسم مستخدم من بيانات Clerk أو القيمة الحالية
   useEffect(() => {
     if (!isSignedIn) return;
     fetch('/api/profile/me')
       .then(r => r.json())
       .then(data => {
-        if (data?.profile_complete) router.replace('/');
-        else setChecking(false);
+        if (data?.profile_complete && !isEditing) {
+          router.replace('/');
+        } else {
+          // تعبئة الحقول بالقيم الحالية إن وجدت
+          setUsername(
+            data?.username
+            ?? user?.username
+            ?? user?.firstName
+            ?? user?.emailAddresses?.[0]?.emailAddress?.split('@')[0]
+            ?? ''
+          );
+          setFavoriteTeam(data?.favorite_team ?? '');
+          setChecking(false);
+        }
       })
-      .catch(() => setChecking(false));
-  }, [isSignedIn, router]);
+      .catch(() => {
+        setUsername(
+          user?.username ?? user?.firstName
+          ?? user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ?? ''
+        );
+        setChecking(false);
+      });
+  }, [isSignedIn, isEditing, router, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,9 +136,21 @@ export default function SetupPage() {
           disabled={loading || username.trim().length < 3}
           className="w-full btn-primary py-3 font-bold text-base disabled:opacity-50"
         >
-          {loading ? 'جاري الحفظ...' : 'ابدأ المنافسة 🚀'}
+          {loading ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات ✓' : 'ابدأ المنافسة 🚀'}
         </button>
       </form>
     </div>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <SetupContent />
+    </Suspense>
   );
 }

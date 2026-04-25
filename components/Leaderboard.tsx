@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { Profile } from '@/lib/supabase';
 
 interface LeaderboardEntry extends Profile {
@@ -48,7 +49,7 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
 
                 {/* المستخدم */}
                 <td className="py-3 px-4">
-                  <div className="flex items-center gap-2">
+                  <Link href={`/u/${encodeURIComponent(entry.username)}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     {entry.avatar_url ? (
                       <Image
                         src={entry.avatar_url}
@@ -67,7 +68,7 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                       {entry.username}
                       {isCurrentUser && <span className="text-xs text-slate-400 mr-1">(أنت)</span>}
                     </span>
-                  </div>
+                  </Link>
                 </td>
 
                 {/* توقعات صحيحة */}
