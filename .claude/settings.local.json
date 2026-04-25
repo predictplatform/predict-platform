@@ -24,7 +24,8 @@
       "Bash(curl -s \"http://localhost:3000/api/matches?date=2026-04-24\")",
       "Bash(1 echo:*)",
       "Bash(node -e \"const webpush = require\\(''web-push''\\); const keys = webpush.generateVAPIDKeys\\(\\); console.log\\(''PUBLIC:'', keys.publicKey\\); console.log\\(''PRIVATE:'', keys.privateKey\\);\")",
-      "Bash(1 -C \"C:\\\\Users\\\\FNR\\\\Desktop\\\\predict-platform\")"
+      "Bash(1 -C \"C:\\\\Users\\\\FNR\\\\Desktop\\\\predict-platform\")",
+      "Bash(node -e \":*)"
     ]
   }
 }
