@@ -7,7 +7,8 @@ import { PushInit } from '@/components/PushInit';
 export const metadata: Metadata = {
   title: 'دوري التوقعات | Football Predictions',
   description: 'توقع نتائج مباريات كرة القدم وتنافس مع الأصدقاء',
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/icon-192.png' },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
