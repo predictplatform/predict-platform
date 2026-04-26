@@ -86,12 +86,12 @@ export default function PredictPage() {
     fetchPredictions();
   }, [fetchUpcoming, fetchPredictions]);
 
-  const handleSubmit = async (matchId: string, homeGoals: number, awayGoals: number) => {
+  const handleSubmit = async (matchId: string, homeGoals: number, awayGoals: number, leagueId: number) => {
     try {
       const res = await fetch('/api/predictions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ match_id: matchId, home_goals: homeGoals, away_goals: awayGoals }),
+        body: JSON.stringify({ match_id: matchId, home_goals: homeGoals, away_goals: awayGoals, league_id: leagueId }),
       });
 
       if (!res.ok) {

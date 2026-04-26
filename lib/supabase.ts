@@ -31,5 +31,6 @@ export type Prediction = {
   home_goals: number;
   away_goals: number;
   points_earned: number | null;
+  league_id: number | null;
   created_at: string;
 };

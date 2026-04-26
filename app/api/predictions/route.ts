@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { match_id, home_goals, away_goals } = body;
+  const { match_id, home_goals, away_goals, league_id } = body;
 
   if (!match_id || home_goals === undefined || away_goals === undefined) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from('predictions')
     .upsert(
-      { user_id: userId, match_id, home_goals, away_goals },
+      { user_id: userId, match_id, home_goals, away_goals, league_id: league_id ?? null },
       { onConflict: 'user_id,match_id', ignoreDuplicates: false }
     )
     .select()

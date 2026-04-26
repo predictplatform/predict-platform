@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { MatchCard } from '@/components/MatchCard';
 import { LEAGUES, FixtureData, LeagueKey } from '@/lib/football-api';
@@ -39,10 +39,8 @@ function MatchesContent() {
   const [fixtures, setFixtures] = useState<FixtureData[]>([]);
   const [loading, setLoading] = useState(true);
   const [predMap, setPredMap] = useState<Record<string, Prediction>>({});
-  const [dateCounts, setDateCounts] = useState<Record<string, number>>({});
 
   const dates = buildDates(dateOffset);
-  const dateScrollRef = useRef<HTMLDivElement>(null);
 
   // جلب المباريات عند تغيير التاريخ أو الدوري
   useEffect(() => {
@@ -75,25 +73,7 @@ function MatchesContent() {
     fetchFixtures();
   }, [selectedDate, selectedLeague, isSignedIn]);
 
-  // جلب عدد المباريات لكل يوم في الشريط (بدون فلتر دوري)
-  useEffect(() => {
-    const fetchCounts = async () => {
-      const results = await Promise.allSettled(
-        dates.map(async (date) => {
-          const res = await fetch(`/api/matches?date=${date}`, { cache: 'no-store' });
-          const data: FixtureData[] = await res.json();
-          return { date, count: Array.isArray(data) ? data.length : 0 };
-        })
-      );
-      const counts: Record<string, number> = {};
-      results.forEach(r => {
-        if (r.status === 'fulfilled') counts[r.value.date] = r.value.count;
-      });
-      setDateCounts(prev => ({ ...prev, ...counts }));
-    };
-    fetchCounts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateOffset]);
+  // عداد التواريخ حُذف — كان يستهلك 7 طلبات API عند كل تغيير الأسبوع
 
   const filtered = fixtures.filter((f) => {
     const s = f.fixture.status.short;
@@ -126,10 +106,7 @@ function MatchesContent() {
           </button>
 
           {/* الأيام */}
-          <div
-            ref={dateScrollRef}
-            className="flex flex-1 gap-1.5 overflow-x-auto scrollbar-none"
-          >
+          <div className="flex flex-1 gap-1.5 overflow-x-auto scrollbar-none">
             {dates.map((date) => {
               const isToday = date === todayStr;
               const isYesterday = date === yesterdayStr;
@@ -138,7 +115,6 @@ function MatchesContent() {
               const dayNum = d.getDate();
               const dayName = isToday ? 'اليوم' : isYesterday ? 'أمس' :
                 d.toLocaleDateString('ar-SA', { weekday: 'short' });
-              const count = dateCounts[date];
 
               return (
                 <button
@@ -163,13 +139,6 @@ function MatchesContent() {
                   <span className="text-[10px] font-semibold mt-0.5 leading-none">
                     {dayName}
                   </span>
-                  {count !== undefined && (
-                    <span className={`text-[9px] mt-1 font-bold leading-none ${
-                      isSelected ? 'text-blue-200' : count > 0 ? 'text-slate-400' : 'text-slate-600'
-                    }`}>
-                      {count > 0 ? count : '—'}
-                    </span>
-                  )}
                 </button>
               );
             })}

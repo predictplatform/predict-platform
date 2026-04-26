@@ -10,6 +10,11 @@ export type PublicProfile = {
   stats: ProfileStats;
 };
 
+const leagueInfo = Object.values(LEAGUES).reduce<Record<number, { name: string; flag: string }>>(
+  (acc, l) => { acc[l.id] = { name: l.name, flag: l.flag }; return acc; },
+  {}
+);
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ username: string }> }
@@ -17,7 +22,6 @@ export async function GET(
   const { username } = await params;
   const supabase = createServerSupabaseClient();
 
-  // جلب الملف الشخصي بالاسم
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, username, favorite_team, total_points')
@@ -26,10 +30,10 @@ export async function GET(
 
   if (!profile) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  // جلب التوقعات المحسوبة فقط
+  // league_id مخزون في predictions — لا حاجة لاستدعاء Football API
   const { data: predictions } = await supabase
     .from('predictions')
-    .select('match_id, points_earned')
+    .select('points_earned, league_id')
     .eq('user_id', profile.id)
     .not('points_earned', 'is', null);
 
@@ -38,44 +42,15 @@ export async function GET(
   const wrong = preds.filter(p => p.points_earned === 0).length;
   const accuracy = preds.length > 0 ? Math.round((correct / preds.length) * 100) : 0;
 
-  // إحصائيات حسب الدوري
-  const matchIds = Array.from(new Set(preds.map(p => p.match_id)));
-  const leagueMap: Record<string, number> = {};
-
-  await Promise.allSettled(
-    matchIds.map(async (matchId) => {
-      try {
-        const res = await fetch(
-          `https://${process.env.FOOTBALL_API_HOST}/fixtures?id=${matchId}`,
-          {
-            headers: {
-              'x-rapidapi-key': process.env.FOOTBALL_API_KEY!,
-              'x-rapidapi-host': process.env.FOOTBALL_API_HOST!,
-            },
-            next: { revalidate: 3600 },
-          }
-        );
-        const json = await res.json();
-        const fixture = json?.response?.[0];
-        if (fixture) leagueMap[matchId] = fixture.league.id;
-      } catch { /* skip */ }
-    })
-  );
-
   const leagueStatsMap: Record<number, { total: number; correct: number; wrong: number }> = {};
   for (const pred of preds) {
-    const leagueId = leagueMap[pred.match_id];
-    if (!leagueId) continue;
-    if (!leagueStatsMap[leagueId]) leagueStatsMap[leagueId] = { total: 0, correct: 0, wrong: 0 };
-    leagueStatsMap[leagueId].total++;
-    if (pred.points_earned! > 0) leagueStatsMap[leagueId].correct++;
-    else leagueStatsMap[leagueId].wrong++;
+    if (!pred.league_id) continue;
+    const lid = pred.league_id;
+    if (!leagueStatsMap[lid]) leagueStatsMap[lid] = { total: 0, correct: 0, wrong: 0 };
+    leagueStatsMap[lid].total++;
+    if (pred.points_earned! > 0) leagueStatsMap[lid].correct++;
+    else leagueStatsMap[lid].wrong++;
   }
-
-  const leagueInfo = Object.values(LEAGUES).reduce<Record<number, { name: string; flag: string }>>(
-    (acc, l) => { acc[l.id] = { name: l.name, flag: l.flag }; return acc; },
-    {}
-  );
 
   const byLeague: LeagueStats[] = Object.entries(leagueStatsMap)
     .map(([id, s]) => {
@@ -97,14 +72,7 @@ export async function GET(
     username: profile.username,
     favorite_team: profile.favorite_team,
     total_points: profile.total_points,
-    stats: {
-      total: preds.length,
-      correct,
-      wrong,
-      pending: 0, // لا نكشف التوقعات المعلقة للزوار
-      accuracy,
-      byLeague,
-    },
+    stats: { total: preds.length, correct, wrong, pending: 0, accuracy, byLeague },
   };
 
   return NextResponse.json(result, {
