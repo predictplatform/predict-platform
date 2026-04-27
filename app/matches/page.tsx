@@ -30,7 +30,8 @@ function MatchesContent() {
   const initialLeague = searchParams.get('league') ? Number(searchParams.get('league')) : null;
   const { isSignedIn } = useUser();
 
-  const todayStr = toLocalISODate(new Date());
+  const todayStr    = toLocalISODate(new Date());
+  const tomorrowStr = toLocalISODate(new Date(Date.now() + 86400000));
   const [dateOffset, setDateOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [selectedLeague, setSelectedLeague] = useState<number | null>(initialLeague);
@@ -233,6 +234,8 @@ function MatchesContent() {
                 fixture={fixture}
                 showPredictButton
                 userPrediction={predMap[String(fixture.fixture.id)] ?? null}
+                todayStr={todayStr}
+                tomorrowStr={tomorrowStr}
               />
             ))}
           </div>

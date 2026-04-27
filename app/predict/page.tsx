@@ -1,15 +1,18 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { useSearchParams } from 'next/navigation';
 import { PredictionCard } from '@/components/PredictionCard';
 import { FixtureData, LEAGUES, LeagueKey } from '@/lib/football-api';
 import { Prediction } from '@/lib/supabase';
 import type { MatchStats } from '@/app/api/predictions/stats/route';
 import Link from 'next/link';
 
-export default function PredictPage() {
+function PredictContent() {
   const { isSignedIn, isLoaded: authLoaded, user } = useUser();
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get('date'); // YYYY-MM-DD أو null
   const [fixtures,    setFixtures]    = useState<FixtureData[]>([]);
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
   const [matchStats,  setMatchStats]  = useState<Record<string, MatchStats>>({});
@@ -51,17 +54,26 @@ export default function PredictPage() {
       const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
       const params   = `&league=${leagueId}`;
 
-      const [todayRes, tomorrowRes] = await Promise.all([
-        fetch(`/api/matches?date=${today}${params}`, { signal }).then(r => r.json()),
-        fetch(`/api/matches?date=${tomorrow}${params}`, { signal }).then(r => r.json()),
-      ]);
+      let rawFixtures: unknown[];
+      if (dateParam) {
+        // إذا جاء من رابط مباراة محدد — جلب ذلك اليوم فقط
+        const res = await fetch(`/api/matches?date=${dateParam}${params}`, { signal }).then(r => r.json());
+        rawFixtures = Array.isArray(res) ? res : [];
+      } else {
+        // الافتراضي: اليوم + الغد
+        const [todayRes, tomorrowRes] = await Promise.all([
+          fetch(`/api/matches?date=${today}${params}`, { signal }).then(r => r.json()),
+          fetch(`/api/matches?date=${tomorrow}${params}`, { signal }).then(r => r.json()),
+        ]);
+        rawFixtures = [
+          ...(Array.isArray(todayRes)    ? todayRes    : []),
+          ...(Array.isArray(tomorrowRes) ? tomorrowRes : []),
+        ];
+      }
 
       if (gen !== fixtureGen.current) return;
 
-      const allFixtures: FixtureData[] = [
-        ...(Array.isArray(todayRes)    ? todayRes    : []),
-        ...(Array.isArray(tomorrowRes) ? tomorrowRes : []),
-      ].filter(f =>
+      const allFixtures: FixtureData[] = (rawFixtures as FixtureData[]).filter(f =>
         ['NS', '1H', 'HT', '2H', 'ET', 'P', 'FT', 'AET', 'PEN'].includes(f.fixture.status.short)
       );
 
@@ -130,15 +142,10 @@ export default function PredictPage() {
   const upcomingFixtures     = fixtures.filter(f => f.fixture.status.short === 'NS');
   const myPredictionFixtures = fixtures.filter(f => predictions[String(f.fixture.id)]);
 
-  console.log('[predict] RENDER', {
-    loading,
-    authLoaded,
-    isSignedIn,
-    fixturesCount: fixtures.length,
-    predictionsKeys: Object.keys(predictions),
-    upcomingCount: upcomingFixtures.length,
-    upcomingWithPred: upcomingFixtures.filter(f => predictions[String(f.fixture.id)]).map(f => f.fixture.id),
-  });
+  // تنسيق التاريخ للعرض
+  const dateLabelAr = dateParam
+    ? new Date(dateParam + 'T12:00:00').toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : null;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
@@ -153,12 +160,19 @@ export default function PredictPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-black text-white">توقعاتي 🎯</h1>
-          {user && (
+          {dateLabelAr ? (
+            <p className="text-slate-400 text-sm mt-1">مباريات {dateLabelAr}</p>
+          ) : user && (
             <p className="text-slate-400 text-sm mt-1">
               مرحباً {user.firstName ?? user.username}! توقع نتائج المباريات القادمة
             </p>
           )}
         </div>
+        {dateParam && (
+          <Link href="/predict" className="text-xs text-slate-400 hover:text-white transition-colors">
+            ← العودة للكل
+          </Link>
+        )}
       </div>
 
       <div className="flex gap-2 mb-5">
@@ -248,5 +262,22 @@ export default function PredictPage() {
         )
       )}
     </div>
+  );
+}
+
+export default function PredictPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="h-8 w-48 bg-slate-700 rounded animate-pulse mb-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="card animate-pulse h-56 bg-slate-700/50" />
+          ))}
+        </div>
+      </div>
+    }>
+      <PredictContent />
+    </Suspense>
   );
 }

@@ -5,15 +5,42 @@ interface Props {
   fixture: FixtureData;
   showPredictButton?: boolean;
   userPrediction?: { home_goals: number; away_goals: number; points_earned: number | null } | null;
+  todayStr?: string;
+  tomorrowStr?: string;
 }
 
-export function MatchCard({ fixture, showPredictButton = false, userPrediction }: Props) {
+export function MatchCard({ fixture, showPredictButton = false, userPrediction, todayStr, tomorrowStr }: Props) {
   const status = getMatchStatus(fixture);
   const time = formatMatchTime(fixture.fixture.date);
   const isFinished = ['FT', 'AET', 'PEN'].includes(fixture.fixture.status.short);
 
   // إيجاد اسم الدوري بالعربية
   const leagueInfo = Object.values(LEAGUES).find(l => l.id === fixture.league.id);
+
+  // ─── حالة التوقع ──────────────────────────────────────────────────────────
+  const fixtureDateStr = fixture.fixture.date.substring(0, 10); // YYYY-MM-DD (UTC)
+  const today    = todayStr    ?? new Date().toISOString().split('T')[0];
+  const tomorrow = tomorrowStr ?? new Date(Date.now() + 86400000).toISOString().split('T')[0];
+  const short    = fixture.fixture.status.short;
+  const isNS         = short === 'NS';
+  const isWithin48h  = fixtureDateStr === today || fixtureDateStr === tomorrow;
+  const isFuture     = fixtureDateStr > tomorrow;
+
+  type PredictState = 'button' | 'locked' | 'soon' | 'none';
+  let predictState: PredictState = 'none';
+  let soonDay = '';
+
+  if (showPredictButton && !userPrediction) {
+    if (isWithin48h && isNS) {
+      predictState = 'button';
+    } else if (isWithin48h && !isNS) {
+      predictState = 'locked';
+    } else if (isFuture) {
+      predictState = 'soon';
+      soonDay = new Date(fixtureDateStr + 'T12:00:00').toLocaleDateString('ar-SA', { weekday: 'long' });
+    }
+    // isPastDate → 'none' (لا يظهر شيء)
+  }
 
   return (
     <div className="card hover:border-slate-600 transition-colors">
@@ -116,15 +143,27 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction }
         </div>
       )}
 
-      {/* زر التوقع */}
-      {showPredictButton && !userPrediction && fixture.fixture.status.short === 'NS' && (
+      {/* زر التوقع / حالة التوقع */}
+      {predictState !== 'none' && (
         <div className="mt-3 pt-3 border-t border-slate-700">
-          <a
-            href="/predict"
-            className="block text-center btn-primary text-sm w-full"
-          >
-            توقع النتيجة
-          </a>
+          {predictState === 'button' && (
+            <a
+              href={`/predict?date=${fixtureDateStr}`}
+              className="block text-center btn-primary text-sm w-full"
+            >
+              توقع النتيجة 🎯
+            </a>
+          )}
+          {predictState === 'locked' && (
+            <p className="text-center text-xs text-slate-500 font-semibold py-1">
+              انطلقت المباراة — التوقع مغلق 🔒
+            </p>
+          )}
+          {predictState === 'soon' && (
+            <p className="text-center text-xs text-slate-500 font-semibold py-1">
+              يفتح التوقع قريباً ⏳ يفتح {soonDay}
+            </p>
+          )}
         </div>
       )}
     </div>
