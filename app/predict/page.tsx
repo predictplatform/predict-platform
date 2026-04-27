@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { PredictionCard } from '@/components/PredictionCard';
 import { FixtureData, LEAGUES, LeagueKey } from '@/lib/football-api';
@@ -9,82 +9,90 @@ import type { MatchStats } from '@/app/api/predictions/stats/route';
 import Link from 'next/link';
 
 export default function PredictPage() {
-  const { isSignedIn, user } = useUser();
-  const [fixtures, setFixtures] = useState<FixtureData[]>([]);
+  const { isSignedIn, isLoaded: authLoaded, user } = useUser();
+  const [fixtures,    setFixtures]    = useState<FixtureData[]>([]);
   const [predictions, setPredictions] = useState<Record<string, Prediction>>({});
-  const [loading, setLoading] = useState(true);
-  const [selectedLeague, setSelectedLeague] = useState<number | null>(null);
+  const [matchStats,  setMatchStats]  = useState<Record<string, MatchStats>>({});
+  const [loading,     setLoading]     = useState(true);
+  const [selectedLeague, setSelectedLeague] = useState<number>(LEAGUES.SAUDI.id);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'my-predictions'>('upcoming');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-  const [matchStats, setMatchStats] = useState<Record<string, MatchStats>>({});
+  const fixtureGen = useRef(0); // generation counter للمباريات فقط
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchUpcoming = useCallback(async () => {
+  // ① جلب التوقعات مرة واحدة عند تحميل الصفحة — مستقلة تماماً عن فلتر الدوري
+  useEffect(() => {
+    if (!authLoaded || !isSignedIn) return;
+    const controller = new AbortController();
+    fetch('/api/predictions', { signal: controller.signal })
+      .then(r => r.json())
+      .then((data: Prediction[]) => {
+        if (!Array.isArray(data)) return;
+        const map: Record<string, Prediction> = {};
+        data.forEach(p => { map[p.match_id] = p; });
+        setPredictions(map);
+      })
+      .catch(e => {
+        if (e instanceof DOMException && e.name === 'AbortError') return;
+      });
+    return () => controller.abort();
+  }, [authLoaded, isSignedIn]);
+
+  // ② جلب المباريات عند تغيير الدوري — لا تمس التوقعات
+  const fetchFixtures = async (leagueId: number, signal: AbortSignal) => {
+    const gen = ++fixtureGen.current;
     setLoading(true);
     try {
-      // جلب مباريات الـ 48 ساعة القادمة
-      const today = new Date().toISOString().split('T')[0];
+      const today    = new Date().toISOString().split('T')[0];
       const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+      const params   = `&league=${leagueId}`;
 
-      const params = selectedLeague ? `&league=${selectedLeague}` : '';
-      const [todayRes, tomorrowRes] = await Promise.allSettled([
-        fetch(`/api/matches?date=${today}${params}`).then(r => r.json()),
-        fetch(`/api/matches?date=${tomorrow}${params}`).then(r => r.json()),
+      const [todayRes, tomorrowRes] = await Promise.all([
+        fetch(`/api/matches?date=${today}${params}`, { signal }).then(r => r.json()),
+        fetch(`/api/matches?date=${tomorrow}${params}`, { signal }).then(r => r.json()),
       ]);
 
-      const allFixtures = [
-        ...(todayRes.status === 'fulfilled' ? todayRes.value : []),
-        ...(tomorrowRes.status === 'fulfilled' ? tomorrowRes.value : []),
-      ];
+      if (gen !== fixtureGen.current) return;
 
-      // فلترة: فقط المباريات القادمة أو الحية
-      const relevant = allFixtures.filter((f: FixtureData) =>
+      const allFixtures: FixtureData[] = [
+        ...(Array.isArray(todayRes)    ? todayRes    : []),
+        ...(Array.isArray(tomorrowRes) ? tomorrowRes : []),
+      ].filter(f =>
         ['NS', '1H', 'HT', '2H', 'ET', 'P', 'FT', 'AET', 'PEN'].includes(f.fixture.status.short)
       );
 
-      setFixtures(relevant);
+      setFixtures(allFixtures);
 
-      // جلب إحصائيات التوقعات لكل المباريات
-      if (relevant.length > 0) {
-        const ids = relevant.map((f: FixtureData) => String(f.fixture.id)).join(',');
+      if (allFixtures.length > 0) {
+        const ids = allFixtures.map(f => String(f.fixture.id)).join(',');
         try {
-          const statsRes = await fetch(`/api/predictions/stats?match_ids=${ids}`);
-          const statsData: MatchStats[] = await statsRes.json();
+          const statsData: MatchStats[] = await fetch(`/api/predictions/stats?match_ids=${ids}`, { signal }).then(r => r.json());
+          if (gen !== fixtureGen.current) return;
           const statsMap: Record<string, MatchStats> = {};
           statsData.forEach(s => { statsMap[s.match_id] = s; });
           setMatchStats(statsMap);
-        } catch {
-          // ignore stats errors
-        }
+        } catch { /* ignore */ }
       }
-    } catch {
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return;
+      if (gen !== fixtureGen.current) return;
       setFixtures([]);
     } finally {
-      setLoading(false);
+      if (gen === fixtureGen.current) setLoading(false);
     }
-  }, [selectedLeague]);
-
-  const fetchPredictions = useCallback(async () => {
-    if (!isSignedIn) return;
-    try {
-      const res = await fetch('/api/predictions');
-      const data: Prediction[] = await res.json();
-      const map: Record<string, Prediction> = {};
-      data.forEach(p => { map[p.match_id] = p; });
-      setPredictions(map);
-    } catch {
-      // ignore
-    }
-  }, [isSignedIn]);
+  };
 
   useEffect(() => {
-    fetchUpcoming();
-    fetchPredictions();
-  }, [fetchUpcoming, fetchPredictions]);
+    if (!authLoaded || !isSignedIn) return;
+    const controller = new AbortController();
+    fetchFixtures(selectedLeague, controller.signal);
+    return () => controller.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoaded, isSignedIn, selectedLeague]);
 
   const handleSubmit = async (matchId: string, homeGoals: number, awayGoals: number, leagueId: number) => {
     try {
@@ -93,12 +101,10 @@ export default function PredictPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ match_id: matchId, home_goals: homeGoals, away_goals: awayGoals, league_id: leagueId }),
       });
-
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error);
       }
-
       const saved: Prediction = await res.json();
       setPredictions(prev => ({ ...prev, [matchId]: saved }));
       showToast('تم حفظ توقعك بنجاح ✓', 'success');
@@ -108,7 +114,7 @@ export default function PredictPage() {
     }
   };
 
-  if (!isSignedIn) {
+  if (authLoaded && !isSignedIn) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
         <p className="text-6xl mb-4">🔐</p>
@@ -121,12 +127,21 @@ export default function PredictPage() {
     );
   }
 
+  const upcomingFixtures     = fixtures.filter(f => f.fixture.status.short === 'NS');
   const myPredictionFixtures = fixtures.filter(f => predictions[String(f.fixture.id)]);
-  const upcomingFixtures = fixtures.filter(f => f.fixture.status.short === 'NS');
+
+  console.log('[predict] RENDER', {
+    loading,
+    authLoaded,
+    isSignedIn,
+    fixturesCount: fixtures.length,
+    predictionsKeys: Object.keys(predictions),
+    upcomingCount: upcomingFixtures.length,
+    upcomingWithPred: upcomingFixtures.filter(f => predictions[String(f.fixture.id)]).map(f => f.fixture.id),
+  });
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      {/* Toast */}
       {toast && (
         <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl font-bold text-sm shadow-xl transition-all ${
           toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
@@ -135,17 +150,17 @@ export default function PredictPage() {
         </div>
       )}
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-black text-white">توقعاتي 🎯</h1>
-          <p className="text-slate-400 text-sm mt-1">
-            مرحباً {user?.firstName ?? user?.username}! توقع نتائج المباريات القادمة
-          </p>
+          {user && (
+            <p className="text-slate-400 text-sm mt-1">
+              مرحباً {user.firstName ?? user.username}! توقع نتائج المباريات القادمة
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-5">
         <button
           onClick={() => setActiveTab('upcoming')}
@@ -165,20 +180,11 @@ export default function PredictPage() {
         </button>
       </div>
 
-      {/* League Filter */}
       <div className="flex flex-wrap gap-2 mb-5">
-        <button
-          onClick={() => setSelectedLeague(null)}
-          className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-            !selectedLeague ? 'bg-white text-black' : 'bg-slate-700 text-slate-300'
-          }`}
-        >
-          الكل
-        </button>
         {(Object.entries(LEAGUES) as [LeagueKey, typeof LEAGUES[LeagueKey]][]).map(([, league]) => (
           <button
             key={league.id}
-            onClick={() => setSelectedLeague(league.id === selectedLeague ? null : league.id)}
+            onClick={() => setSelectedLeague(league.id)}
             className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
               selectedLeague === league.id
                 ? `${league.color} text-white`
@@ -190,7 +196,6 @@ export default function PredictPage() {
         ))}
       </div>
 
-      {/* Content */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -202,7 +207,7 @@ export default function PredictPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {upcomingFixtures.map(fixture => (
               <PredictionCard
-                key={fixture.fixture.id}
+                key={`${fixture.fixture.id}-${predictions[String(fixture.fixture.id)] ? 'predicted' : 'open'}`}
                 fixture={fixture}
                 existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
                 onSubmit={handleSubmit}
@@ -221,7 +226,7 @@ export default function PredictPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {myPredictionFixtures.map(fixture => (
               <PredictionCard
-                key={fixture.fixture.id}
+                key={`${fixture.fixture.id}-${predictions[String(fixture.fixture.id)] ? 'predicted' : 'open'}`}
                 fixture={fixture}
                 existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
                 onSubmit={handleSubmit}
