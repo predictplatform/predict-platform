@@ -65,11 +65,14 @@ function GoalInput({
   );
 }
 
+const SITE_URL = 'predict-platform-ten.vercel.app';
+
 export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }: Props) {
   const [homeGoals, setHomeGoals] = useState(existingPrediction?.home_goals ?? 0);
   const [awayGoals, setAwayGoals] = useState(existingPrediction?.away_goals ?? 0);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(!!existingPrediction);
+  const [justSubmitted, setJustSubmitted] = useState(false); // true فقط بعد الضغط على تأكيد في هذه الجلسة
 
   const leagueInfo = Object.values(LEAGUES).find(l => l.id === fixture.league.id);
   const isFinished = ['FT', 'AET', 'PEN'].includes(fixture.fixture.status.short);
@@ -81,10 +84,23 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
     try {
       await onSubmit(String(fixture.fixture.id), homeGoals, awayGoals, fixture.league.id);
       setSubmitted(true);
+      setJustSubmitted(true);
     } finally {
       setLoading(false);
     }
   };
+
+  const home = fixture.teams.home.name;
+  const away = fixture.teams.away.name;
+
+  const twitterText = encodeURIComponent(
+    `توقعت ⚽ ${home} ${homeGoals} - ${awayGoals} ${away}\nوأنت وش توقعك؟ 🔥\nتنافس معي في دوري التوقعات 👇\n${SITE_URL}`
+  );
+  const whatsappText = encodeURIComponent(
+    `🏆 توقعت ${home} ${homeGoals} - ${awayGoals} ${away}!\nتعال تنافس معي في دوري التوقعات وشوف مين أدق 😄\n${SITE_URL}`
+  );
+  const twitterUrl  = `https://twitter.com/intent/tweet?text=${twitterText}`;
+  const whatsappUrl = `https://wa.me/?text=${whatsappText}`;
 
   return (
     <div className="card border border-slate-700 hover:border-slate-600 transition-colors">
@@ -178,8 +194,32 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
       )}
 
       {submitted && !isFinished && (
-        <div className="mt-3 text-center text-xs text-slate-400">
-          تم تسجيل توقعك ✓ — لا يمكن التعديل بعد الآن
+        <div className="mt-3">
+          <p className="text-center text-xs text-slate-400 mb-2">
+            تم تسجيل توقعك ✓ — لا يمكن التعديل بعد الآن
+          </p>
+          {justSubmitted && (
+            <div className="flex gap-2">
+              <a
+                href={twitterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-black hover:bg-slate-900 text-white text-xs font-bold transition-colors border border-slate-600"
+              >
+                <span className="text-sm font-black">𝕏</span>
+                شارك
+              </a>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-700 hover:bg-green-600 text-white text-xs font-bold transition-colors"
+              >
+                <span className="text-sm">💬</span>
+                واتساب
+              </a>
+            </div>
+          )}
         </div>
       )}
 
