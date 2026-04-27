@@ -2,9 +2,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Profile } from '@/lib/supabase';
 
-interface LeaderboardEntry extends Profile {
+export interface LeaderboardEntry extends Profile {
   rank: number;
-  correct_predictions?: number;
+  correct_predictions: number;
+  total_predictions: number;
+  accuracy_rate: number;
+  adjusted_points: number;
 }
 
 interface Props {
@@ -26,13 +29,15 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
           <tr className="text-slate-400 text-xs border-b border-slate-700 bg-slate-800/60">
             <th className="py-3 px-4 text-right w-12">#</th>
             <th className="py-3 px-4 text-right">المستخدم</th>
-            <th className="py-3 px-4 text-center">توقعات صح</th>
-            <th className="py-3 px-4 text-center font-bold text-white">النقاط</th>
+            <th className="py-3 px-4 text-center">الدقة</th>
+            <th className="py-3 px-4 text-center">النقاط</th>
+            <th className="py-3 px-4 text-center font-bold text-white">المعدّلة</th>
           </tr>
         </thead>
         <tbody>
           {entries.map((entry) => {
             const isCurrentUser = entry.id === currentUserId;
+            const accuracyPct = Math.round(entry.accuracy_rate * 100);
             return (
               <tr
                 key={entry.id}
@@ -71,17 +76,27 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                   </Link>
                 </td>
 
-                {/* توقعات صحيحة */}
-                <td className="py-3 px-4 text-center text-slate-300">
-                  {entry.correct_predictions ?? '—'}
+                {/* الدقة */}
+                <td className="py-3 px-4 text-center">
+                  <span className={`text-sm font-bold ${
+                    accuracyPct >= 60 ? 'text-green-400' :
+                    accuracyPct >= 40 ? 'text-amber-400' : 'text-slate-400'
+                  }`}>
+                    {accuracyPct}%
+                  </span>
                 </td>
 
-                {/* النقاط */}
+                {/* النقاط الأصلية */}
+                <td className="py-3 px-4 text-center text-slate-400 text-sm">
+                  {entry.total_points}
+                </td>
+
+                {/* النقاط المعدلة */}
                 <td className="py-3 px-4 text-center">
                   <span className={`font-black text-lg ${
                     entry.rank === 1 ? 'text-amber-400' : 'text-white'
                   }`}>
-                    {entry.total_points}
+                    {entry.adjusted_points.toFixed(1)}
                   </span>
                 </td>
               </tr>
@@ -92,7 +107,7 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
 
       {entries.length === 0 && (
         <div className="text-center py-10 text-slate-400">
-          لا يوجد لاعبون بعد. كن الأول! 🏆
+          لا يوجد لاعبون مؤهلون بعد. وصّل 10 توقعات لتدخل الترتيب! 🏆
         </div>
       )}
     </div>

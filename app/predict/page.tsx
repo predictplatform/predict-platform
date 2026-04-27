@@ -194,6 +194,29 @@ function PredictContent() {
         </button>
       </div>
 
+      {/* شريط تقدم التأهل للليدربورد — يختفي بعد 10 توقعات */}
+      {(() => {
+        const total = Object.keys(predictions).length;
+        if (total >= 10) return null;
+        const pct = Math.min((total / 10) * 100, 100);
+        return (
+          <div className="card mb-5 border border-amber-700/40 bg-amber-900/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-amber-400">
+                توقعاتك: {total}/10 — وصّل 10 توقعات عشان تدخل الليدربورد! 🎯
+              </span>
+              <span className="text-xs text-slate-500">{10 - total} باقي</span>
+            </div>
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="flex flex-wrap gap-2 mb-5">
         {(Object.entries(LEAGUES) as [LeagueKey, typeof LEAGUES[LeagueKey]][]).map(([, league]) => (
           <button

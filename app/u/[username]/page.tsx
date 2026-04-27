@@ -75,6 +75,32 @@ export default function PublicProfilePage() {
         )}
       </div>
 
+      {/* شارة التأهل */}
+      {stats.total >= 10 ? (
+        <div className="card mb-4 flex items-center gap-3 border border-green-700/40 bg-green-900/10 py-3">
+          <span className="text-xl">✅</span>
+          <span className="text-sm font-bold text-green-400">مؤهل في الليدربورد</span>
+        </div>
+      ) : stats.total > 0 ? (
+        <div className="card mb-4 border border-amber-700/40 bg-amber-900/10">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <span className="text-base">🎯</span>
+              <span className="text-sm font-bold text-amber-400">
+                في طور التأهل — باقي {10 - stats.total} توقعات للدخول للليدربورد
+              </span>
+            </div>
+            <span className="text-xs text-slate-500">{stats.total}/10</span>
+          </div>
+          <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-amber-500 rounded-full transition-all duration-500"
+              style={{ width: `${(stats.total / 10) * 100}%` }}
+            />
+          </div>
+        </div>
+      ) : null}
+
       {/* الإحصائيات العامة */}
       <section className="mb-6">
         <h2 className="text-lg font-black text-white mb-3">الإحصائيات</h2>
