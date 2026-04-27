@@ -20,6 +20,7 @@ function PredictContent() {
   const [selectedLeague, setSelectedLeague] = useState<number>(LEAGUES.SAUDI.id);
   const [activeTab, setActiveTab] = useState<'upcoming' | 'my-predictions'>('upcoming');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [freshIds, setFreshIds] = useState<Set<string>>(new Set()); // IDs مؤكّدة في هذه الجلسة
   const fixtureGen = useRef(0); // generation counter للمباريات فقط
 
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -119,6 +120,7 @@ function PredictContent() {
       }
       const saved: Prediction = await res.json();
       setPredictions(prev => ({ ...prev, [matchId]: saved }));
+      setFreshIds(prev => new Set(prev).add(matchId));
       showToast('تم حفظ توقعك بنجاح ✓', 'success');
     } catch (e) {
       showToast(`حدث خطأ: ${e instanceof Error ? e.message : 'حاول مجدداً'}`, 'error');
@@ -247,6 +249,7 @@ function PredictContent() {
                 key={`${fixture.fixture.id}-${predictions[String(fixture.fixture.id)] ? 'predicted' : 'open'}`}
                 fixture={fixture}
                 existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
+                freshlyPredicted={freshIds.has(String(fixture.fixture.id))}
                 onSubmit={handleSubmit}
                 stats={matchStats[String(fixture.fixture.id)] ?? null}
               />
@@ -266,6 +269,7 @@ function PredictContent() {
                 key={`${fixture.fixture.id}-${predictions[String(fixture.fixture.id)] ? 'predicted' : 'open'}`}
                 fixture={fixture}
                 existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
+                freshlyPredicted={freshIds.has(String(fixture.fixture.id))}
                 onSubmit={handleSubmit}
                 stats={matchStats[String(fixture.fixture.id)] ?? null}
               />

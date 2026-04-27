@@ -14,6 +14,7 @@ interface Props {
     away_goals: number;
     points_earned: number | null;
   } | null;
+  freshlyPredicted?: boolean;
   onSubmit: (matchId: string, homeGoals: number, awayGoals: number, leagueId: number) => Promise<void>;
   stats?: MatchStats | null;
 }
@@ -67,12 +68,11 @@ function GoalInput({
 
 const SITE_URL = 'predict-platform-ten.vercel.app';
 
-export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }: Props) {
+export function PredictionCard({ fixture, existingPrediction, freshlyPredicted = false, onSubmit, stats }: Props) {
   const [homeGoals, setHomeGoals] = useState(existingPrediction?.home_goals ?? 0);
   const [awayGoals, setAwayGoals] = useState(existingPrediction?.away_goals ?? 0);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(!!existingPrediction);
-  const [justSubmitted, setJustSubmitted] = useState(false); // true فقط بعد الضغط على تأكيد في هذه الجلسة
 
   const leagueInfo = Object.values(LEAGUES).find(l => l.id === fixture.league.id);
   const isFinished = ['FT', 'AET', 'PEN'].includes(fixture.fixture.status.short);
@@ -84,7 +84,6 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
     try {
       await onSubmit(String(fixture.fixture.id), homeGoals, awayGoals, fixture.league.id);
       setSubmitted(true);
-      setJustSubmitted(true);
     } finally {
       setLoading(false);
     }
@@ -198,7 +197,7 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
           <p className="text-center text-xs text-slate-400 mb-2">
             تم تسجيل توقعك ✓ — لا يمكن التعديل بعد الآن
           </p>
-          {justSubmitted && (
+          {freshlyPredicted && (
             <div className="flex gap-2">
               <a
                 href={twitterUrl}
