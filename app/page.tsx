@@ -66,6 +66,40 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* بنر راعي */}
+      <section className="mb-8">
+        <a
+          href="https://google.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative flex items-center justify-between gap-4 w-full rounded-xl border border-slate-600 bg-gradient-to-l from-slate-800 to-slate-900 overflow-hidden group
+                     h-[50px] px-4 md:h-[90px] md:px-8
+                     hover:border-slate-500 transition-colors"
+          aria-label="إعلان — متجر 360 للتيشرتات الرياضية"
+        >
+          {/* شارة إعلان */}
+          <span className="absolute top-1 left-2 text-[9px] text-slate-500 select-none">إعلان</span>
+
+          {/* المحتوى */}
+          <div className="flex items-center gap-3">
+            <span className="text-2xl md:text-4xl">👕</span>
+            <div>
+              <p className="text-white font-black text-sm md:text-xl leading-tight">
+                متجر 360 للتيشرتات الرياضية
+              </p>
+              <p className="text-slate-400 text-[10px] md:text-sm hidden md:block">
+                أحدث تصاميم الأندية والمنتخبات — شحن سريع لجميع مناطق المملكة
+              </p>
+            </div>
+          </div>
+
+          {/* زر تسوق */}
+          <span className="flex-shrink-0 bg-amber-500 hover:bg-amber-400 group-hover:bg-amber-400 text-black font-black text-xs md:text-sm px-3 py-1.5 md:px-5 md:py-2.5 rounded-lg transition-colors whitespace-nowrap">
+            تسوق الآن ←
+          </span>
+        </a>
+      </section>
+
       {/* الدوريات */}
       <section className="mb-8">
         <h2 className="text-xl font-bold text-white mb-4">الدوريات المتاحة</h2>
