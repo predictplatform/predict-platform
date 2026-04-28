@@ -99,7 +99,7 @@ export function PredictionCard({ fixture, existingPrediction, freshlyPredicted =
     `🏆 توقعت ${home} ${homeGoals} - ${awayGoals} ${away}!\nتعال تنافس معي في دوري التوقعات وشوف مين أدق 😄\n${SITE_URL}`
   );
   const twitterUrl  = `https://twitter.com/intent/tweet?text=${twitterText}`;
-  const whatsappUrl = `https://wa.me/?text=${whatsappText}`;
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
 
   return (
     <div className="card border border-slate-700 hover:border-slate-600 transition-colors">
