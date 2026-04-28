@@ -181,6 +181,44 @@ export function PredictionCard({ fixture, existingPrediction, freshlyPredicted =
         </div>
       </div>
 
+      {/* بعد انتهاء المباراة — توقع المستخدم + النتيجة الفعلية + النقاط */}
+      {isFinished && existingPrediction && (
+        <div className="mt-4 pt-3 border-t border-slate-700">
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {/* توقع المستخدم */}
+            <div className="bg-slate-800/60 rounded-lg p-2 text-center">
+              <p className="text-[10px] text-slate-500 mb-1">توقعك</p>
+              <p className="text-xl font-black text-white tabular-nums">
+                {existingPrediction.home_goals} - {existingPrediction.away_goals}
+              </p>
+            </div>
+            {/* النتيجة الفعلية */}
+            <div className="bg-slate-800/60 rounded-lg p-2 text-center">
+              <p className="text-[10px] text-slate-500 mb-1">النتيجة</p>
+              <p className="text-xl font-black text-blue-300 tabular-nums">
+                {fixture.goals.home ?? '–'} - {fixture.goals.away ?? '–'}
+              </p>
+            </div>
+          </div>
+          {/* النقاط */}
+          {existingPrediction.points_earned !== null ? (
+            <div className={`rounded-lg py-2 text-center font-black text-base ${
+              existingPrediction.points_earned === 5
+                ? 'bg-amber-500/20 text-amber-400'
+                : existingPrediction.points_earned >= 3
+                  ? 'bg-green-500/20 text-green-400'
+                  : 'bg-slate-700/60 text-slate-400'
+            }`}>
+              {getPointsLabel(existingPrediction.points_earned)}
+            </div>
+          ) : (
+            <div className="rounded-lg py-2 text-center text-xs text-slate-500 bg-slate-800/40">
+              جاري حساب النقاط...
+            </div>
+          )}
+        </div>
+      )}
+
       {/* زر التأكيد */}
       {!submitted && !isStarted && (
         <button
