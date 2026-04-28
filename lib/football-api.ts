@@ -154,10 +154,11 @@ async function rawFetchAll(endpoint: string): Promise<unknown[]> {
 
 const _cachedFixturesByDate = unstable_cache(
   async (date: string): Promise<SmRawFixture[]> => {
-    const data = await rawFetch(
-      `/fixtures/date/${date}?include=participants;scores;league;state&per_page=100`
-    ) as { data?: SmRawFixture[] };
-    return data.data ?? [];
+    // rawFetchAll يجلب كل الصفحات — يمنع فقدان مباريات بعد المئة الأولى
+    const items = await rawFetchAll(
+      `/fixtures/date/${date}?include=participants;scores;league;state`
+    );
+    return items as SmRawFixture[];
   },
   [`sm-fixtures-date-${CV}`],
   { revalidate: TTL.FIXTURES }
@@ -165,10 +166,10 @@ const _cachedFixturesByDate = unstable_cache(
 
 const _cachedHistoricalFixtures = unstable_cache(
   async (date: string): Promise<SmRawFixture[]> => {
-    const data = await rawFetch(
-      `/fixtures/date/${date}?include=participants;scores;league;state&per_page=100`
-    ) as { data?: SmRawFixture[] };
-    return data.data ?? [];
+    const items = await rawFetchAll(
+      `/fixtures/date/${date}?include=participants;scores;league;state`
+    );
+    return items as SmRawFixture[];
   },
   [`sm-fixtures-historical-${CV}`],
   { revalidate: TTL.HISTORICAL }
