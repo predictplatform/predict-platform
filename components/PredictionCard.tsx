@@ -14,7 +14,6 @@ interface Props {
     away_goals: number;
     points_earned: number | null;
   } | null;
-  freshlyPredicted?: boolean;
   onSubmit: (matchId: string, homeGoals: number, awayGoals: number, leagueId: number) => Promise<void>;
   stats?: MatchStats | null;
 }
@@ -68,7 +67,7 @@ function GoalInput({
 
 const SITE_URL = 'https://predict-platform-ten.vercel.app';
 
-export function PredictionCard({ fixture, existingPrediction, freshlyPredicted = false, onSubmit, stats }: Props) {
+export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }: Props) {
   const [homeGoals, setHomeGoals] = useState(existingPrediction?.home_goals ?? 0);
   const [awayGoals, setAwayGoals] = useState(existingPrediction?.away_goals ?? 0);
   const [loading, setLoading] = useState(false);
@@ -235,28 +234,26 @@ export function PredictionCard({ fixture, existingPrediction, freshlyPredicted =
           <p className="text-center text-xs text-slate-400 mb-2">
             تم تسجيل توقعك ✓ — لا يمكن التعديل بعد الآن
           </p>
-          {freshlyPredicted && (
-            <div className="flex gap-2">
-              <a
-                href={twitterUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-black hover:bg-slate-900 text-white text-xs font-bold transition-colors border border-slate-600"
-              >
-                <span className="text-sm font-black">𝕏</span>
-                شارك
-              </a>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-700 hover:bg-green-600 text-white text-xs font-bold transition-colors"
-              >
-                <span className="text-sm">💬</span>
-                واتساب
-              </a>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <a
+              href={twitterUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-black hover:bg-slate-900 text-white text-xs font-bold transition-colors border border-slate-600"
+            >
+              <span className="text-sm font-black">𝕏</span>
+              شارك
+            </a>
+            <a
+              href={whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-700 hover:bg-green-600 text-white text-xs font-bold transition-colors"
+            >
+              <span className="text-sm">💬</span>
+              واتساب
+            </a>
+          </div>
         </div>
       )}
 
