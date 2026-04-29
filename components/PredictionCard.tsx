@@ -66,7 +66,7 @@ function GoalInput({
   );
 }
 
-const SITE_URL = 'predict-platform-ten.vercel.app';
+const SITE_URL = 'https://predict-platform-ten.vercel.app';
 
 export function PredictionCard({ fixture, existingPrediction, freshlyPredicted = false, onSubmit, stats }: Props) {
   const [homeGoals, setHomeGoals] = useState(existingPrediction?.home_goals ?? 0);
