@@ -196,7 +196,7 @@ const _cachedStandings = unstable_cache(
 const _cachedTopScorers = unstable_cache(
   async (seasonId: number): Promise<unknown[]> =>
     rawFetchAll(
-      `/topscorers/seasons/${seasonId}?include=player;participant&per_page=20`
+      `/topscorers/seasons/${seasonId}?include=player;participant`
     ),
   [`sm-topscorers-${CV}`],
   { revalidate: TTL.TOPSCORERS }
@@ -299,7 +299,13 @@ export async function getTopScorers(leagueId: number, _season?: number) {
 
   const raw = await _cachedTopScorers(seasonId) as SmRawTopScorer[];
 
-  return raw
+  // type_id=52 هو الأهداف في Sportmonks — نفلتر قبل الترتيب لمنع اختلاط التمريرات والبطاقات
+  // لو ما فيه type_id نقبل الكل (backwards compat مع بعض المواسم)
+  const goalsOnly = raw.some(s => s.type_id != null)
+    ? raw.filter(s => s.type_id === 52)
+    : raw;
+
+  return goalsOnly
     .sort((a, b) => (b.total ?? 0) - (a.total ?? 0))
     .map(s => ({
       player: {
@@ -424,6 +430,7 @@ type SmRawStanding = {
 type SmRawTopScorer = {
   player_id: number;
   participant_id: number;
+  type_id?: number;   // 52 = Goals | 79 = Assists | 84 = YellowCards …
   total: number;
   player?: {
     id: number;

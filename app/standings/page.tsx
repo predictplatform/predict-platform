@@ -36,7 +36,7 @@ export default function StandingsPage() {
       <div className="flex items-center gap-3 mb-6">
         <h1 className="text-2xl font-black text-white">جدول الترتيب</h1>
         <span className="text-xs bg-blue-600/30 text-blue-400 border border-blue-600/50 px-2 py-1 rounded-full font-semibold">
-          موسم 2024/25
+          موسم 2025/26
         </span>
       </div>
 
