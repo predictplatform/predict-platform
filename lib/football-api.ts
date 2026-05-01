@@ -299,23 +299,25 @@ export async function getTopScorers(leagueId: number, _season?: number) {
 
   const raw = await _cachedTopScorers(seasonId) as SmRawTopScorer[];
 
-  return raw.map(s => ({
-    player: {
-      id:          s.player?.id ?? s.player_id,
-      name:        s.player?.display_name ?? s.player?.name ?? '',
-      photo:       s.player?.image_path ?? '',
-      nationality: '',
-    },
-    statistics: [{
-      team: {
-        id:   s.participant?.id   ?? s.participant_id,
-        name: s.participant?.name ?? '',
-        logo: s.participant?.image_path ?? '',
+  return raw
+    .sort((a, b) => (b.total ?? 0) - (a.total ?? 0))
+    .map(s => ({
+      player: {
+        id:          s.player?.id ?? s.player_id,
+        name:        s.player?.display_name ?? s.player?.name ?? '',
+        photo:       s.player?.image_path ?? '',
+        nationality: '',
       },
-      goals:  { total: s.total, assists: null },
-      games:  { appearences: null },
-    }],
-  }));
+      statistics: [{
+        team: {
+          id:   s.participant?.id   ?? s.participant_id,
+          name: s.participant?.name ?? '',
+          logo: s.participant?.image_path ?? '',
+        },
+        goals:  { total: s.total, assists: null },
+        games:  { appearences: null },
+      }],
+    }));
 }
 
 // ─── Cache-Control header للـ CDN ─────────────────────────────────────────────
