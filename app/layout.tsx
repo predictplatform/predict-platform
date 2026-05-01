@@ -21,11 +21,6 @@ export default function RootLayout({
     <ClerkProvider
       appearance={{
         variables: { colorPrimary: '#2563eb' },
-        elements: {
-          // إخفاء حقل رقم الجوال من جميع النماذج
-          phoneNumberField: { display: 'none' },
-          phoneInputBox: { display: 'none' },
-        },
       }}
     >
       <html lang="ar" dir="rtl">
