@@ -1,5 +1,6 @@
 import { MatchCard } from '@/components/MatchCard';
 import { getFeaturedFixtures, LEAGUES, FixtureData } from '@/lib/football-api';
+import { LeagueSelector } from '@/components/LeagueSelector';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
@@ -103,17 +104,7 @@ export default async function HomePage() {
       {/* الدوريات */}
       <section className="mb-8">
         <h2 className="text-xl font-bold text-white mb-4">الدوريات المتاحة</h2>
-        <div className="flex flex-wrap gap-2">
-          {Object.values(LEAGUES).map(league => (
-            <Link
-              key={league.id}
-              href={`/matches?league=${league.id}`}
-              className={`${league.color} text-white text-sm font-bold px-4 py-2 rounded-full hover:opacity-90 transition-opacity`}
-            >
-              {league.flag} {league.name}
-            </Link>
-          ))}
-        </div>
+        <LeagueSelector getHref={id => `/matches?league=${id}`} />
       </section>
 
       {/* مباريات اليوم */}
