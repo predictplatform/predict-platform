@@ -21,6 +21,7 @@ interface LeagueSelectorProps {
   selected?: number | null;
   onChange?: (id: number | null) => void;
   withAll?: boolean;
+  allLabel?: string;  // نص زر "الكل" — الافتراضي "الكل"
   /** وضع الروابط (navigation) — string قابل للتمرير من Server Component */
   hrefBase?: string;  // مثال: "/matches?league="  →  /matches?league=944
   className?: string;
@@ -30,6 +31,7 @@ export function LeagueSelector({
   selected,
   onChange,
   withAll = false,
+  allLabel = 'الكل',
   hrefBase,
   className = '',
 }: LeagueSelectorProps) {
@@ -52,7 +54,7 @@ export function LeagueSelector({
           className={`${ITEM_BASE} ${selected === null ? ACTIVE : INACTIVE}`}
         >
           <span className="text-base leading-none">🌐</span>
-          <span className="mt-0.5 leading-none">الكل</span>
+          <span className="mt-0.5 leading-none">{allLabel}</span>
         </button>
       )}
 
