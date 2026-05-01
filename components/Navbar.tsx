@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 
@@ -22,9 +23,15 @@ export default function Navbar() {
     <nav className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 text-white font-black text-xl">
-          <span className="text-2xl">⚽</span>
-          <span>دوري التوقعات</span>
+        <Link href="/" className="flex-shrink-0">
+          <Image
+            src="/logo.svg"
+            alt="دوري التوقعات"
+            width={132}
+            height={30}
+            priority
+            className="h-[30px] w-auto"
+          />
         </Link>
 
         {/* Navigation Links */}

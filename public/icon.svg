@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192" role="img" aria-label="دوري التوقعات">
+
+  <defs>
+    <!-- تدرج الكرة -->
+    <radialGradient id="iBallGrad" cx="38%" cy="30%" r="68%">
+      <stop offset="0%"   stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#c8d3de"/>
+    </radialGradient>
+    <!-- توهج خلف الكرة -->
+    <radialGradient id="iGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#1e40af" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+    </radialGradient>
+    <!-- قطع البقع داخل الكرة -->
+    <clipPath id="iBallClip">
+      <circle cx="96" cy="93" r="72"/>
+    </clipPath>
+  </defs>
+
+  <!-- ─── خلفية مربعة داكنة ──────────────────────── -->
+  <rect width="192" height="192" rx="32" fill="#0f172a"/>
+
+  <!-- توهج خلفي للكرة -->
+  <circle cx="96" cy="93" r="88" fill="url(#iGlow)"/>
+
+  <!-- ─── كرة القدم (مقياس 3.6× من اللوقو) ─────── -->
+  <!-- الكرة: مركز (96,93)، نصف قطر 72 -->
+  <circle cx="96" cy="93" r="72" fill="url(#iBallGrad)"/>
+
+  <!-- البقع — مقياس اللوقو: (x-25)×3.6+96 / (y-25)×3.6+93 -->
+  <g clip-path="url(#iBallClip)" fill="#1e293b">
+    <!-- مضلع مركزي سداسي -->
+    <polygon points="96,68.8 114,81.4 114,106.6 96,119.2 78,106.6 78,81.4"/>
+    <!-- أعلى (0°)        --> <circle cx="96"   cy="28.8" r="16.2"/>
+    <!-- أعلى يمين (72°)  --> <circle cx="141"  cy="64.2" r="14.4"/>
+    <!-- أسفل يمين (144°) --> <circle cx="124.8" cy="132.6" r="14.4"/>
+    <!-- أسفل يسار (216°) --> <circle cx="67.2"  cy="132.6" r="14.4"/>
+    <!-- أعلى يسار (288°) --> <circle cx="51"   cy="64.2" r="14.4"/>
+  </g>
+
+  <!-- حافة الكرة -->
+  <circle cx="96" cy="93" r="72" fill="none" stroke="#475569" stroke-width="2"/>
+
+  <!-- ─── خط ذهبي تحت الكرة + نص ────────────────── -->
+  <line x1="48" y1="174" x2="144" y2="174"
+        stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+
+  <text x="96" y="187"
+        font-family="Tahoma,'Segoe UI',Arial,sans-serif"
+        font-size="12" font-weight="700"
+        fill="#94a3b8"
+        text-anchor="middle">دوري التوقعات</text>
+
+</svg>
