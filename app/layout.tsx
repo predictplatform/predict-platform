@@ -21,6 +21,31 @@ export default function RootLayout({
     <ClerkProvider
       appearance={{
         variables: { colorPrimary: '#2563eb' },
+        elements: {
+          // إخفاء شارة "Development mode"
+          badge: { display: 'none' },
+        },
+      }}
+      localization={{
+        signIn: {
+          start: {
+            title: 'دوري التوقعات',
+            subtitle: 'أهلاً بعودتك!',
+            actionText: 'ما عندك حساب؟',
+            actionLink: 'سجّل الآن',
+          },
+        },
+        signUp: {
+          start: {
+            title: 'إنشاء حساب',
+            subtitle: 'أهلاً! أدخل رقم جوالك للبدء',
+            actionText: 'عندك حساب؟',
+            actionLink: 'سجّل دخولك',
+          },
+        },
+        formFieldLabel__phoneNumber: 'رقم الجوال',
+        formFieldInputPlaceholder__phoneNumber: 'أدخل رقم جوالك',
+        formButtonPrimary: 'متابعة',
       }}
     >
       <html lang="ar" dir="rtl">
