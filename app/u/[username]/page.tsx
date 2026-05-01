@@ -14,7 +14,6 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [myUsername, setMyUsername] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/profile/${encodeURIComponent(username)}`)
@@ -27,16 +26,8 @@ export default function PublicProfilePage() {
       .finally(() => setLoading(false));
   }, [username]);
 
-  // جلب username الخاص من Supabase — Clerk لا يحفظه
-  useEffect(() => {
-    if (!user) return;
-    fetch('/api/profile/me')
-      .then(r => r.json())
-      .then(data => { if (data?.username) setMyUsername(data.username); })
-      .catch(() => {});
-  }, [user]);
-
-  const isOwnProfile = !!myUsername && myUsername === username;
+  // نقارن Clerk user.id مع profile.user_id مباشرةً — بدون fetch إضافي وبدون flash
+  const isOwnProfile = !!user && !!profile && user.id === profile.user_id;
 
   if (loading) {
     return (

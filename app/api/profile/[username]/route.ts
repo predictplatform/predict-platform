@@ -4,6 +4,7 @@ import { LEAGUES } from '@/lib/football-api';
 import type { ProfileStats, LeagueStats } from '@/app/api/profile/stats/route';
 
 export type PublicProfile = {
+  user_id: string;          // Clerk user ID — للمقارنة من جهة العميل فقط
   username: string;
   favorite_team: string | null;
   total_points: number;
@@ -69,6 +70,7 @@ export async function GET(
     .sort((a, b) => b.total - a.total);
 
   const result: PublicProfile = {
+    user_id: profile.id,
     username: profile.username,
     favorite_team: profile.favorite_team,
     total_points: profile.total_points,
