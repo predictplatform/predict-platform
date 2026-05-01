@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { LEAGUES, LeagueKey } from '@/lib/football-api';
+import { LEAGUES } from '@/lib/football-api';
+import { LeagueSelector } from '@/components/LeagueSelector';
 
 interface TopScorer {
   player: { id: number; name: string; photo: string; nationality: string };
@@ -46,22 +47,7 @@ export default function StatsPage() {
         </span>
       </div>
 
-      {/* League Selector */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {(Object.entries(LEAGUES) as [LeagueKey, typeof LEAGUES[LeagueKey]][]).map(([, league]) => (
-          <button
-            key={league.id}
-            onClick={() => setSelectedLeague(league.id)}
-            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-              selectedLeague === league.id
-                ? `${league.color} text-white scale-105`
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            {league.flag} {league.name}
-          </button>
-        ))}
-      </div>
+      <LeagueSelector selected={selectedLeague} onChange={id => id !== null && setSelectedLeague(id)} className="mb-6" />
 
       {loading ? (
         <div className="card animate-pulse h-96 bg-slate-700/50" />

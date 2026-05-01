@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { MatchCard } from '@/components/MatchCard';
-import { LEAGUES, FixtureData, LeagueKey } from '@/lib/football-api';
+import { LEAGUES, FixtureData } from '@/lib/football-api';
+import { LeagueSelector } from '@/components/LeagueSelector';
 import { Prediction } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
 
@@ -159,41 +160,11 @@ function MatchesContent() {
         <div className="border-t border-slate-700/60 my-3" />
 
         {/* شريط الدوريات */}
-        <div className="flex items-center gap-0 overflow-x-auto scrollbar-none">
-          {/* الكل */}
-          <button
-            onClick={() => setSelectedLeague(null)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-sm font-bold transition-colors relative ${
-              !selectedLeague
-                ? 'text-white after:absolute after:bottom-0 after:right-4 after:left-4 after:h-0.5 after:bg-white after:rounded-full'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <span className="text-base">🌐</span>
-            الكل
-          </button>
-
-          {/* فاصل رأسي */}
-          <div className="w-px h-5 bg-slate-700 mx-1 flex-shrink-0" />
-
-          {(Object.entries(LEAGUES) as [LeagueKey, typeof LEAGUES[LeagueKey]][]).map(([, league]) => {
-            const isActive = selectedLeague === league.id;
-            return (
-              <button
-                key={league.id}
-                onClick={() => setSelectedLeague(isActive ? null : league.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-bold transition-colors relative whitespace-nowrap ${
-                  isActive
-                    ? 'text-white after:absolute after:bottom-0 after:right-3 after:left-3 after:h-0.5 after:bg-blue-400 after:rounded-full'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span className="text-sm">{league.flag}</span>
-                {league.name}
-              </button>
-            );
-          })}
-        </div>
+        <LeagueSelector
+          selected={selectedLeague}
+          onChange={setSelectedLeague}
+          withAll
+        />
 
         {/* فاصل سفلي */}
         <div className="border-t border-slate-700/40 mt-2" />

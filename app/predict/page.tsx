@@ -4,10 +4,11 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
 import { PredictionCard } from '@/components/PredictionCard';
-import { FixtureData, LEAGUES, LeagueKey } from '@/lib/football-api';
+import { FixtureData, LEAGUES } from '@/lib/football-api';
 import { Prediction } from '@/lib/supabase';
 import type { MatchStats } from '@/app/api/predictions/stats/route';
 import Link from 'next/link';
+import { LeagueSelector } from '@/components/LeagueSelector';
 
 function PredictContent() {
   const { isSignedIn, isLoaded: authLoaded, user } = useUser();
@@ -223,21 +224,7 @@ function PredictContent() {
         );
       })()}
 
-      <div className="flex flex-wrap gap-2 mb-5">
-        {(Object.entries(LEAGUES) as [LeagueKey, typeof LEAGUES[LeagueKey]][]).map(([, league]) => (
-          <button
-            key={league.id}
-            onClick={() => setSelectedLeague(league.id)}
-            className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${
-              selectedLeague === league.id
-                ? `${league.color} text-white`
-                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-            }`}
-          >
-            {league.flag} {league.name}
-          </button>
-        ))}
-      </div>
+      <LeagueSelector selected={selectedLeague} onChange={id => id !== null && setSelectedLeague(id)} className="mb-5" />
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
