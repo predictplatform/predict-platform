@@ -95,9 +95,7 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
   const twitterText = encodeURIComponent(
     `\u26BD\uFE0F توقعت: ${home} ${homeGoals} - ${awayGoals} ${away}\n\u{1F525} وأنت وش توقعك؟\n\u{1F447}\uFE0F تنافس معي في دوري التوقعات\n${SITE_URL}`
   );
-  const whatsappText = encodeURIComponent(
-    `\u{1F3C6} توقعت ${home} ${homeGoals} - ${awayGoals} ${away}!\n\u{1F604} تعال تنافس معي في دوري التوقعات وشوف مين أدق\n${SITE_URL}`
-  );
+  const whatsappText = twitterText; // نفس النص تماماً
   const twitterUrl  = `https://twitter.com/intent/tweet?text=${twitterText}`;
   const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
 
