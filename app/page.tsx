@@ -104,7 +104,7 @@ export default async function HomePage() {
       {/* الدوريات */}
       <section className="mb-8">
         <h2 className="text-xl font-bold text-white mb-4">الدوريات المتاحة</h2>
-        <LeagueSelector getHref={id => `/matches?league=${id}`} />
+        <LeagueSelector hrefBase="/matches?league=" />
       </section>
 
       {/* مباريات اليوم */}

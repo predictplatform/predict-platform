@@ -21,8 +21,8 @@ interface LeagueSelectorProps {
   selected?: number | null;
   onChange?: (id: number | null) => void;
   withAll?: boolean;
-  /** وضع الروابط (navigation) — يُعطى للصفحة الرئيسية */
-  getHref?: (id: number) => string;
+  /** وضع الروابط (navigation) — string قابل للتمرير من Server Component */
+  hrefBase?: string;  // مثال: "/matches?league="  →  /matches?league=944
   className?: string;
 }
 
@@ -30,7 +30,7 @@ export function LeagueSelector({
   selected,
   onChange,
   withAll = false,
-  getHref,
+  hrefBase,
   className = '',
 }: LeagueSelectorProps) {
   const leagues = Object.entries(LEAGUES) as [LeagueKey, typeof LEAGUES[LeagueKey]][];
@@ -46,7 +46,7 @@ export function LeagueSelector({
     <div className={`flex bg-slate-800 rounded-xl p-1 gap-0.5 ${className}`}>
 
       {/* زر "الكل" — فقط في وضع الأزرار */}
-      {withAll && !getHref && (
+      {withAll && !hrefBase && (
         <button
           onClick={() => onChange?.(null)}
           className={`${ITEM_BASE} ${selected === null ? ACTIVE : INACTIVE}`}
@@ -60,11 +60,11 @@ export function LeagueSelector({
         const content = itemContent(league.flag, SHORT[league.id] ?? league.name);
         const isActive = selected === league.id;
 
-        return getHref ? (
+        return hrefBase ? (
           // وضع الروابط — للصفحة الرئيسية
           <Link
             key={league.id}
-            href={getHref(league.id)}
+            href={`${hrefBase}${league.id}`}
             className={`${ITEM_BASE} ${INACTIVE}`}
           >
             {content}
