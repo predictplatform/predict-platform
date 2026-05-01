@@ -65,7 +65,7 @@ function GoalInput({
   );
 }
 
-const SITE_URL = 'https://predict-platform-ten.vercel.app';
+const SITE_URL = 'https://dawri-tawaquat.com';
 
 export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }: Props) {
   const [homeGoals, setHomeGoals] = useState(existingPrediction?.home_goals ?? 0);
@@ -91,11 +91,12 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
   const home = fixture.teams.home.name;
   const away = fixture.teams.away.name;
 
+  // \uFE0F = Variation Selector-16 → يجبر ⚽ (U+26BD) على عرض emoji بدل text/مربع فارغ
   const twitterText = encodeURIComponent(
-    `توقعت ⚽ ${home} ${homeGoals} - ${awayGoals} ${away}\nوأنت وش توقعك؟ 🔥\nتنافس معي في دوري التوقعات 👇\n${SITE_URL}`
+    `\u26BD\uFE0F توقعت: ${home} ${homeGoals} - ${awayGoals} ${away}\n\u{1F525} وأنت وش توقعك؟\n\u{1F447}\uFE0F تنافس معي في دوري التوقعات\n${SITE_URL}`
   );
   const whatsappText = encodeURIComponent(
-    `🏆 توقعت ${home} ${homeGoals} - ${awayGoals} ${away}!\nتعال تنافس معي في دوري التوقعات وشوف مين أدق 😄\n${SITE_URL}`
+    `\u{1F3C6} توقعت ${home} ${homeGoals} - ${awayGoals} ${away}!\n\u{1F604} تعال تنافس معي في دوري التوقعات وشوف مين أدق\n${SITE_URL}`
   );
   const twitterUrl  = `https://twitter.com/intent/tweet?text=${twitterText}`;
   const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
