@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import { PushInit } from '@/components/PushInit';
@@ -142,6 +143,7 @@ export default function RootLayout({
           <main className="min-h-screen bg-slate-900">
             {children}
           </main>
+          <Analytics />
           <footer className="bg-slate-800 border-t border-slate-700 text-slate-400 text-sm">
             {/* تواصل معنا */}
             <div className="text-center py-5 border-b border-slate-700">
