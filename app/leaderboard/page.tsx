@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { LeaderboardTable } from '@/components/Leaderboard';
 import { LeagueSelector } from '@/components/LeagueSelector';
 import type { LeaderboardEntry } from '@/app/api/leaderboard/route';
+import { ShareProfileButtons } from '@/components/ShareProfileButtons';
 
 export default function LeaderboardPage() {
   const { user } = useUser();
@@ -38,17 +39,29 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, [selectedLeague]);
 
-  const myRank = qualified.findIndex(e => e.id === user?.id) + 1;
-  const MIN    = selectedLeague !== null ? 5 : 10;
+  const myRank  = qualified.findIndex(e => e.id === user?.id) + 1;
+  const myEntry = myRank > 0 ? qualified[myRank - 1] : null;
+  const MIN     = selectedLeague !== null ? 5 : 10;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-black text-white">الليدربورد 🏆</h1>
-        {myRank > 0 && (
-          <div className="card py-2 px-4 text-sm">
-            <span className="text-slate-400">مركزك: </span>
-            <span className="font-black text-blue-400 text-lg">#{myRank}</span>
+        {myRank > 0 && myEntry && (
+          <div className="flex items-center gap-3">
+            <div className="card py-2 px-4 text-sm">
+              <span className="text-slate-400">مركزك: </span>
+              <span className="font-black text-blue-400 text-lg">#{myRank}</span>
+            </div>
+            <ShareProfileButtons
+              rank={myRank}
+              stats={{
+                total:    myEntry.total_predictions,
+                correct:  myEntry.correct_predictions,
+                wrong:    myEntry.total_predictions - myEntry.correct_predictions,
+                accuracy: Math.round(myEntry.accuracy_rate * 100),
+              }}
+            />
           </div>
         )}
       </div>
