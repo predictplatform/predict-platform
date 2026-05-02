@@ -43,7 +43,48 @@ export default function RootLayout({
             actionLink: 'سجّل دخولك',
           },
         },
-        formFieldLabel__phoneNumber: 'رقم الجوال',
+        userProfile: {
+          navbar: {
+            title:       'إدارة حسابك',
+            description: 'إدارة حسابك',
+            account:     'الملف الشخصي',
+            security:    'الأمان',
+          },
+          formButtonPrimary__add:    'إضافة',
+          formButtonPrimary__save:   'حفظ',
+          formButtonPrimary__finish: 'إنهاء',
+          formButtonReset:           'إلغاء',
+          start: {
+            headerTitle__account:  'إدارة حسابك',
+            headerTitle__security: 'الأمان',
+            profileSection: {
+              title:         'تفاصيل الملف',
+              primaryButton: 'تعديل الملف',
+            },
+            phoneNumbersSection: {
+              title:         'أرقام الجوال',
+              primaryButton: 'أضف رقم جوال',
+              detailsAction__primary:    'الرئيسي',
+              detailsAction__nonPrimary: 'اجعله رئيسياً',
+              detailsAction__unverified: 'تحقق',
+              destructiveAction:         'حذف',
+            },
+          },
+          profilePage: {
+            title: 'الملف الشخصي',
+          },
+          phoneNumberPage: {
+            title:        'أرقام الجوال',
+            verifyTitle:  'تحقق من رقم الجوال',
+            infoText:     'سيُرسل رمز تحقق على هذا الرقم',
+          },
+        },
+        userButton: {
+          action__manageAccount: 'إدارة الحساب',
+          action__signOut:       'تسجيل الخروج',
+          action__signOutAll:    'تسجيل الخروج من كل الأجهزة',
+        },
+        formFieldLabel__phoneNumber:            'رقم الجوال',
         formFieldInputPlaceholder__phoneNumber: 'أدخل رقم جوالك',
         formButtonPrimary: 'متابعة',
       }}
