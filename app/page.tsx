@@ -37,7 +37,7 @@ export default async function HomePage() {
           ⚽ دوري التوقعات
         </h1>
         <p className="text-slate-400 text-lg max-w-xl mx-auto">
-          توقع المباريات .. جمع نقاط ونافس اخوياك
+          توقع المباريات .. جمّع نقاط ونافس اخوياك
         </p>
         <div className="flex flex-wrap justify-center gap-3 mt-6">
           <Link href="/predict" className="btn-primary text-base px-8 py-3">
