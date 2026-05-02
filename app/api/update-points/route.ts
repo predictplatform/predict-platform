@@ -90,23 +90,29 @@ export async function GET(req: NextRequest) {
   );
   // ────────────────────────────────────────────────────────────────────────────
 
-  const matchIds = Array.from(new Set(pending.map((p: { match_id: string }) => p.match_id)));
+  type PredRow = {
+    id: string; user_id: string; match_id: string;
+    home_goals: number; away_goals: number;
+    league_id: number | null; points_earned: number | null;
+  };
+
+  const matchIds = Array.from(new Set(pending.map((p: PredRow) => p.match_id)));
   let updated = 0;
   let notified = 0;
   const affectedUsers = new Set<string>();
 
   type FinishedMatch = {
-    matchId: string;
-    homeTeam: string;
-    awayTeam: string;
-    homeGoals: number;
-    awayGoals: number;
+    matchId: string; homeTeam: string; awayTeam: string;
+    homeGoals: number; awayGoals: number;
   };
   const finishedMatches: FinishedMatch[] = [];
 
+  // ─── حساب النقاط لكل التوقعات (بدون DB calls هنا) ──────────────────────────
+  const predUpdates: Array<PredRow & { points_earned: number }> = [];
+
   for (const matchId of matchIds) {
     const fixture = fixtureMap.get(matchId);
-    if (!fixture) continue; // مباراة قبل 4 أيام أو غير موجودة في النطاق
+    if (!fixture) continue;
 
     const { short } = fixture.fixture.status;
     if (!['FT', 'AET', 'PEN'].includes(short)) continue;
@@ -125,41 +131,47 @@ export async function GET(req: NextRequest) {
       awayGoals,
     });
 
-    const matchPredictions = pending.filter((p: { match_id: string }) => p.match_id === matchId);
+    const matchPredictions = (pending as PredRow[]).filter(p => p.match_id === matchId);
 
     for (const pred of matchPredictions) {
       const points = calculatePoints(
         { homeGoals: pred.home_goals, awayGoals: pred.away_goals },
         { homeGoals, awayGoals }
       );
-
-      await supabase
-        .from('predictions')
-        .update({ points_earned: points })
-        .eq('id', pred.id);
-
+      // نبني الكائن الكامل حتى يعمل upsert بدون مشاكل حقول فارغة
+      predUpdates.push({ ...pred, points_earned: points });
       affectedUsers.add(pred.user_id);
       updated++;
     }
   }
 
-  // تحديث total_points لكل مستخدم متأثر
-  for (const userId of Array.from(affectedUsers)) {
-    const { data: userPreds } = await supabase
+  // ─── Batch 1: تحديث النقاط لكل التوقعات في طلب واحد ─────────────────────────
+  if (predUpdates.length > 0) {
+    await supabase
       .from('predictions')
-      .select('points_earned')
-      .eq('user_id', userId)
+      .upsert(predUpdates, { onConflict: 'id' });
+  }
+
+  // ─── Batch 2 + 3: total_points — جلب واحد ثم تحديث واحد لكل المستخدمين ──────
+  const affectedUserIds = Array.from(affectedUsers);
+  if (affectedUserIds.length > 0) {
+    const { data: allUserPreds } = await supabase
+      .from('predictions')
+      .select('user_id, points_earned')
+      .in('user_id', affectedUserIds)
       .not('points_earned', 'is', null);
 
-    const total = (userPreds ?? []).reduce(
-      (sum: number, p: { points_earned: number }) => sum + (p.points_earned ?? 0),
-      0
-    );
+    // حساب المجموع لكل مستخدم في الذاكرة
+    const totalsMap: Record<string, number> = {};
+    for (const p of (allUserPreds ?? []) as { user_id: string; points_earned: number }[]) {
+      totalsMap[p.user_id] = (totalsMap[p.user_id] ?? 0) + p.points_earned;
+    }
 
+    // upsert واحد لكل الـ profiles
+    const profileUpdates = Object.entries(totalsMap).map(([id, total_points]) => ({ id, total_points }));
     await supabase
       .from('profiles')
-      .update({ total_points: total })
-      .eq('id', userId);
+      .upsert(profileUpdates, { onConflict: 'id' });
   }
 
   // إرسال إشعار لكل مستخدم
