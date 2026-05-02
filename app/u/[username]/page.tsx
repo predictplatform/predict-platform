@@ -5,7 +5,6 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import type { PublicProfile } from '@/app/api/profile/[username]/route';
-import { ShareProfileButtons } from '@/components/ShareProfileButtons';
 
 export default function PublicProfilePage() {
   const params = useParams<{ username: string }>();
@@ -70,23 +69,11 @@ export default function PublicProfilePage() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
-          {isOwnProfile && (
-            <Link href="/setup?edit=1" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-              تعديل الملف
-            </Link>
-          )}
-          {stats.total > 0 && (
-            <ShareProfileButtons
-              stats={{
-                total:    stats.total,
-                correct:  stats.correct,
-                wrong:    stats.wrong,
-                accuracy: stats.accuracy,
-              }}
-            />
-          )}
-        </div>
+        {isOwnProfile && (
+          <Link href="/setup?edit=1" className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0">
+            تعديل الملف
+          </Link>
+        )}
       </div>
 
       {/* شارة التأهل */}
