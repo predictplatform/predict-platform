@@ -111,8 +111,11 @@ export async function GET(req: NextRequest) {
     const { short } = fixture.fixture.status;
     if (!['FT', 'AET', 'PEN'].includes(short)) continue;
 
-    const homeGoals = fixture.goals.home ?? 0;
-    const awayGoals = fixture.goals.away ?? 0;
+    // تخطى إذا لم تصل النتيجة بعد من الـ API — انتظر الـ cron القادم
+    if (fixture.goals.home === null || fixture.goals.away === null) continue;
+
+    const homeGoals = fixture.goals.home;
+    const awayGoals = fixture.goals.away;
 
     finishedMatches.push({
       matchId,
