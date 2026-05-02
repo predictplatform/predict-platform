@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { LEAGUES } from '@/lib/football-api';
 import type { ProfileStats, LeagueStats } from '@/app/api/profile/stats/route';
 
 export type PublicProfile = {
-  user_id: string;          // Clerk user ID — للمقارنة من جهة العميل فقط
+  /** موجود فقط عند جلب الملف الشخصي من قِبل صاحبه — لا يُكشف للعموم */
+  user_id?: string;
   username: string;
   favorite_team: string | null;
   total_points: number;
@@ -21,6 +23,7 @@ export async function GET(
   { params }: { params: Promise<{ username: string }> }
 ) {
   const { username } = await params;
+  const { userId: callerId } = await auth();
   const supabase = createServerSupabaseClient();
 
   const { data: profile } = await supabase
@@ -70,7 +73,8 @@ export async function GET(
     .sort((a, b) => b.total - a.total);
 
   const result: PublicProfile = {
-    user_id: profile.id,
+    // user_id يُعاد فقط لصاحب الملف — لا يُكشف للزوار الآخرين
+    ...(callerId === profile.id ? { user_id: profile.id } : {}),
     username: profile.username,
     favorite_team: profile.favorite_team,
     total_points: profile.total_points,

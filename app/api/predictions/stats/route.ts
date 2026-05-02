@@ -20,10 +20,12 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServerSupabaseClient();
 
+  // فقط التوقعات المحسوبة (points_earned IS NOT NULL) — لا نكشف توقعات المباريات الحية
   const { data, error } = await supabase
     .from('predictions')
     .select('match_id, home_goals, away_goals')
-    .in('match_id', matchIds);
+    .in('match_id', matchIds)
+    .not('points_earned', 'is', null);
 
   if (error) return NextResponse.json([], { status: 500 });
 
