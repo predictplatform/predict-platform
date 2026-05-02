@@ -5,11 +5,56 @@ import Navbar from '@/components/Navbar';
 import { PushInit } from '@/components/PushInit';
 import { ProfileSetupBanner } from '@/components/ProfileSetupBanner';
 
+const SITE_URL = 'https://dawri-tawaquat.com';
+
 export const metadata: Metadata = {
-  title: 'دوري التوقعات | Football Predictions',
-  description: 'توقع نتائج مباريات كرة القدم وتنافس مع الأصدقاء',
-  icons: { icon: '/icon-192.png' },
+  title: {
+    default:  'دوري التوقعات — توقع المباريات وتنافس مع الجميع',
+    template: '%s — دوري التوقعات',
+  },
+  description:
+    'توقع نتائج مباريات كرة القدم بدقة، جمّع النقاط، وتنافس مع أصدقاءك في دوري روشن والدوريات الأوروبية',
+  keywords: [
+    'توقعات كرة القدم',
+    'دوري روشن',
+    'مباريات اليوم',
+    'توقع المباريات',
+    'الدوري الإنجليزي',
+    'الدوري الإسباني',
+    'الدوري الإيطالي',
+    'الدوري الألماني',
+  ],
+  authors:  [{ name: 'دوري التوقعات' }],
+  creator:  'دوري التوقعات',
+  metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type:        'website',
+    locale:      'ar_SA',
+    url:         SITE_URL,
+    siteName:    'دوري التوقعات',
+    title:       'دوري التوقعات — توقع المباريات وتنافس مع الجميع',
+    description: 'توقع نتائج مباريات كرة القدم بدقة، جمّع النقاط، وتنافس مع أصدقاءك في دوري روشن والدوريات الأوروبية',
+    images: [{ url: '/icon-192.png', width: 192, height: 192, alt: 'دوري التوقعات' }],
+  },
+  twitter: {
+    card:        'summary',
+    title:       'دوري التوقعات — توقع المباريات وتنافس مع الجميع',
+    description: 'توقع نتائج مباريات كرة القدم بدقة، جمّع النقاط، وتنافس مع أصدقاءك',
+    images:      ['/icon-192.png'],
+  },
+  icons: {
+    icon:  '/icon-192.png',
+    apple: '/icon-192.png',
+  },
   manifest: '/manifest.json',
+  robots: {
+    index:  true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export default function RootLayout({
