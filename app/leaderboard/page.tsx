@@ -5,24 +5,11 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { LeaderboardTable } from '@/components/Leaderboard';
 import { LeagueSelector } from '@/components/LeagueSelector';
-import { Profile } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
-
-export type LeaderboardEntry = Profile & {
-  rank: number;
-  correct_predictions: number;
-  total_predictions: number;
-  accuracy_rate: number;   // 0–1
-  adjusted_points: number; // base_points × (1 + accuracy_rate)
-};
-
-// عام: 10 توقعات — دوري محدد: 5 توقعات
-const MIN_ALL    = 10;
-const MIN_LEAGUE = 5;
+import type { LeaderboardEntry } from '@/app/api/leaderboard/route';
 
 export default function LeaderboardPage() {
   const { user } = useUser();
-  const [selectedLeague, setSelectedLeague] = useState<number | null>(null); // null = عام
+  const [selectedLeague, setSelectedLeague] = useState<number | null>(null);
   const [qualified,  setQualified]  = useState<LeaderboardEntry[]>([]);
   const [qualifying, setQualifying] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,92 +18,15 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       setLoading(true);
       try {
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
+        const url = selectedLeague !== null
+          ? `/api/leaderboard?league_id=${selectedLeague}`
+          : '/api/leaderboard';
 
-        // ① جلب الـ profiles (بدون ترتيب — سنرتب لاحقاً)
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('*')
-          .limit(200);
+        const res  = await fetch(url);
+        const data = await res.json();
 
-        const userIds = (profiles ?? []).map((p: Profile) => p.id);
-        if (userIds.length === 0) {
-          setQualified([]); setQualifying([]); return;
-        }
-
-        // ② جلب التوقعات — مفلترة بالدوري إذا محدد
-        let predsQuery = supabase
-          .from('predictions')
-          .select('user_id, points_earned, league_id')
-          .in('user_id', userIds);
-
-        if (selectedLeague !== null) {
-          predsQuery = predsQuery.eq('league_id', selectedLeague);
-        }
-
-        const { data: preds } = await predsQuery;
-
-        // ③ حساب الإحصائيات لكل مستخدم من التوقعات المفلترة
-        const statsMap: Record<string, {
-          total: number; settled: number; correct: number; leaguePoints: number;
-        }> = {};
-
-        (preds ?? []).forEach((p: { user_id: string; points_earned: number | null }) => {
-          if (!statsMap[p.user_id])
-            statsMap[p.user_id] = { total: 0, settled: 0, correct: 0, leaguePoints: 0 };
-          statsMap[p.user_id].total++;
-          if (p.points_earned !== null) {
-            statsMap[p.user_id].settled++;
-            statsMap[p.user_id].leaguePoints += p.points_earned;
-            if (p.points_earned > 0) statsMap[p.user_id].correct++;
-          }
-        });
-
-        // ④ بناء الإدخالات
-        const entries: LeaderboardEntry[] = (profiles ?? []).map((p: Profile) => {
-          const s = statsMap[p.id] ?? { total: 0, settled: 0, correct: 0, leaguePoints: 0 };
-          const accuracy_rate   = s.settled > 0 ? s.correct / s.settled : 0;
-          // عام: استخدم total_points من الـ profile (محدّث بالكرون)
-          // دوري محدد: احسب من مجموع points_earned للدوري
-          const basePoints      = selectedLeague === null ? p.total_points : s.leaguePoints;
-          const adjusted_points = basePoints * (1 + accuracy_rate);
-          return {
-            ...p,
-            total_points: basePoints,  // يُعرض في العمود كنقاط هذا السياق
-            rank: 0,
-            correct_predictions: s.correct,
-            total_predictions:   s.total,
-            accuracy_rate,
-            adjusted_points,
-          };
-        });
-
-        // ⑤ للدوري المحدد: اخفِ المستخدمين بلا توقعات في هذا الدوري
-        const relevant = selectedLeague !== null
-          ? entries.filter(e => e.total_predictions > 0)
-          : entries;
-
-        const MIN = selectedLeague !== null ? MIN_LEAGUE : MIN_ALL;
-
-        const q = relevant
-          .filter(e => e.total_predictions >= MIN)
-          .sort((a, b) =>
-            b.adjusted_points !== a.adjusted_points
-              ? b.adjusted_points - a.adjusted_points
-              : b.accuracy_rate  - a.accuracy_rate
-          )
-          .map((e, i) => ({ ...e, rank: i + 1 }));
-
-        const notQ = relevant
-          .filter(e => e.total_predictions > 0 && e.total_predictions < MIN)
-          .sort((a, b) => b.total_predictions - a.total_predictions)
-          .map((e, i) => ({ ...e, rank: i + 1 }));
-
-        setQualified(q);
-        setQualifying(notQ);
+        setQualified(data.qualified   ?? []);
+        setQualifying(data.qualifying ?? []);
       } catch {
         setQualified([]);
         setQualifying([]);
@@ -129,7 +39,7 @@ export default function LeaderboardPage() {
   }, [selectedLeague]);
 
   const myRank = qualified.findIndex(e => e.id === user?.id) + 1;
-  const MIN    = selectedLeague !== null ? MIN_LEAGUE : MIN_ALL;
+  const MIN    = selectedLeague !== null ? 5 : 10;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
@@ -233,7 +143,7 @@ export default function LeaderboardPage() {
                   </thead>
                   <tbody>
                     {qualifying.map(entry => {
-                      const remaining    = MIN - entry.total_predictions;
+                      const remaining     = MIN - entry.total_predictions;
                       const isCurrentUser = entry.id === user?.id;
                       return (
                         <tr key={entry.id}

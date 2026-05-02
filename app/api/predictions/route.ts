@@ -77,6 +77,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
+  // تحقق من أن match_id عدد صحيح موجب
+  const matchIdNum = Number(match_id);
+  if (!Number.isInteger(matchIdNum) || matchIdNum <= 0) {
+    return NextResponse.json({ error: 'match_id must be a positive integer' }, { status: 400 });
+  }
+
+  // تحقق من أن الأهداف أعداد صحيحة بين 0 و15
+  if (!Number.isInteger(home_goals) || !Number.isInteger(away_goals)) {
+    return NextResponse.json({ error: 'Goals must be integers' }, { status: 400 });
+  }
+
   if (home_goals < 0 || home_goals > 15 || away_goals < 0 || away_goals > 15) {
     return NextResponse.json({ error: 'Goals must be between 0 and 15' }, { status: 400 });
   }
