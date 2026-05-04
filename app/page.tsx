@@ -4,7 +4,6 @@ import { LeagueSelector } from '@/components/LeagueSelector';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { auth } from '@clerk/nextjs/server';
 import Link from 'next/link';
-import Image from 'next/image';
 
 export default async function HomePage() {
   let fixtures: FixtureData[] = [];
@@ -48,21 +47,6 @@ export default async function HomePage() {
             الليدربورد 🏆
           </Link>
         </div>
-      </section>
-
-      {/* بنر الراعي */}
-      <section className="mb-8">
-        <a href="https://enjaznow.com/" target="_blank" rel="noopener noreferrer sponsored"
-          className="block rounded-2xl overflow-hidden hover:opacity-90 transition-opacity">
-          <Image
-            src="/sponsor-banner.jpg"
-            alt="راعي دوري التوقعات"
-            width={1200}
-            height={300}
-            className="w-full h-auto object-cover"
-            priority
-          />
-        </a>
       </section>
 
       {/* نظام النقاط */}
