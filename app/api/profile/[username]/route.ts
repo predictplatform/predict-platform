@@ -10,6 +10,7 @@ export type PublicProfile = {
   username: string;
   favorite_team: string | null;
   total_points: number;
+  created_at: string;
   stats: ProfileStats;
 };
 
@@ -28,7 +29,7 @@ export async function GET(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, username, favorite_team, total_points')
+    .select('id, username, favorite_team, total_points, created_at')
     .eq('username', username)
     .single();
 
@@ -78,6 +79,7 @@ export async function GET(
     username: profile.username,
     favorite_team: profile.favorite_team,
     total_points: profile.total_points,
+    created_at: profile.created_at,
     stats: { total: preds.length, correct, wrong, pending: 0, accuracy, byLeague },
   };
 

@@ -67,6 +67,15 @@ export default function PublicProfilePage() {
             <p className="text-amber-400 text-sm font-bold mt-0.5">
               {profile.total_points} نقطة
             </p>
+            <p className="text-slate-500 text-xs mt-0.5">
+              عضو منذ:{' '}
+              {new Date(profile.created_at).toLocaleDateString('ar-SA', {
+                weekday: 'long',
+                day:     'numeric',
+                month:   'long',
+                year:    'numeric',
+              })}
+            </p>
           </div>
         </div>
         {isOwnProfile && (
