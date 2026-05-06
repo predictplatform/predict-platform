@@ -52,6 +52,9 @@ export async function GET(req: NextRequest) {
     .is('points_earned', null);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  console.log(`[CRON] pending predictions in DB: ${pending?.length ?? 0}`);
+
   if (!pending || pending.length === 0) return NextResponse.json({ updated: 0 });
 
   type PredRow = {
@@ -60,11 +63,9 @@ export async function GET(req: NextRequest) {
     league_id: number | null; points_earned: number | null;
   };
 
-  // ── جلب كل مباراة مباشرة بـ ID — أكثر موثوقية من الجلب بالتاريخ ──────────
-  // • يتجنب مشاكل التايم زون ومحدودية الصفحات
-  // • كل fixture له cache entry مستقل بـ ID
-  // • أخطاء الـ API تظهر صريحة بدل أن تُبتلع بصمت
+  // ── جلب كل مباراة مباشرة بـ ID ──────────────────────────────────────────────
   const matchIds = Array.from(new Set(pending.map((p: PredRow) => p.match_id)));
+  console.log(`[CRON] unique match IDs to fetch (${matchIds.length}):`, matchIds);
 
   const fixtureMap = new Map<string, FixtureData>();
 
@@ -73,11 +74,19 @@ export async function GET(req: NextRequest) {
   );
 
   fetchResults.forEach((result, i) => {
+    const id = matchIds[i];
     if (result.status === 'fulfilled' && result.value) {
-      fixtureMap.set(matchIds[i], result.value);
+      const f = result.value;
+      console.log(`[CRON] fixture ${id}: status=${f.fixture.status.short} goals=${f.goals.home}-${f.goals.away} teams="${f.teams.home.name} vs ${f.teams.away.name}"`);
+      fixtureMap.set(id, f);
+    } else if (result.status === 'rejected') {
+      console.error(`[CRON] fixture ${id}: FETCH FAILED —`, result.reason);
+    } else {
+      console.warn(`[CRON] fixture ${id}: API returned null (unknown match_id?)`);
     }
-    // لو 'rejected' — نتجاهل هذا الـ match_id ونعالجه في الكرون القادم
   });
+
+  console.log(`[CRON] fixtures fetched successfully: ${fixtureMap.size}/${matchIds.length}`);
   // ────────────────────────────────────────────────────────────────────────────
 
   let updated = 0;
@@ -90,18 +99,27 @@ export async function GET(req: NextRequest) {
   };
   const finishedMatches: FinishedMatch[] = [];
 
-  // ─── حساب النقاط لكل التوقعات (بدون DB calls هنا) ──────────────────────────
+  // ─── حساب النقاط لكل التوقعات ────────────────────────────────────────────────
   const predUpdates: Array<PredRow & { points_earned: number }> = [];
 
   for (const matchId of matchIds) {
     const fixture = fixtureMap.get(matchId);
-    if (!fixture) continue;
+    if (!fixture) {
+      console.log(`[CRON] match ${matchId}: skipped — not in fixtureMap`);
+      continue;
+    }
 
     const { short } = fixture.fixture.status;
-    if (!['FT', 'AET', 'PEN'].includes(short)) continue;
+    if (!['FT', 'AET', 'PEN'].includes(short)) {
+      console.log(`[CRON] match ${matchId}: skipped — status is "${short}" (not finished)`);
+      continue;
+    }
 
     // تخطى إذا لم تصل النتيجة بعد من الـ API — انتظر الـ cron القادم
-    if (fixture.goals.home === null || fixture.goals.away === null) continue;
+    if (fixture.goals.home === null || fixture.goals.away === null) {
+      console.warn(`[CRON] match ${matchId}: skipped — goals are null despite status ${short}`);
+      continue;
+    }
 
     const homeGoals = fixture.goals.home;
     const awayGoals = fixture.goals.away;
@@ -128,11 +146,15 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  console.log(`[CRON] predictions to update: ${predUpdates.length}, affected users: ${affectedUsers.size}`);
+
   // ─── Batch 1: تحديث النقاط لكل التوقعات في طلب واحد ─────────────────────────
   if (predUpdates.length > 0) {
-    await supabase
+    const { error: upsertError } = await supabase
       .from('predictions')
       .upsert(predUpdates, { onConflict: 'id' });
+    if (upsertError) console.error('[CRON] upsert predictions error:', upsertError.message);
+    else console.log(`[CRON] predictions upserted OK`);
   }
 
   // ─── Batch 2 + 3: total_points — جلب واحد ثم تحديث واحد لكل المستخدمين ──────
@@ -193,5 +215,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  console.log(`[CRON] DONE — updated=${updated} notified=${notified} usersUpdated=${affectedUsers.size}`);
   return NextResponse.json({ updated, notified, usersUpdated: affectedUsers.size });
 }
