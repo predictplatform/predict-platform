@@ -503,3 +503,21 @@ export const translations = {
 } as const;
 
 export type Translations = typeof translations.ar;
+
+// أسماء الدوريات الكاملة — مفصولة عن as const لأن المفاتيح أرقام
+export const LEAGUE_NAMES: Record<Lang, Record<number, string>> = {
+  ar: {
+    944: 'دوري روشن السعودي',
+    8:   'الدوري الإنجليزي الممتاز',
+    564: 'الدوري الإسباني',
+    384: 'الدوري الإيطالي',
+    82:  'الدوري الألماني',
+  },
+  en: {
+    944: 'Saudi Pro League',
+    8:   'Premier League',
+    564: 'La Liga',
+    384: 'Serie A',
+    82:  'Bundesliga',
+  },
+};

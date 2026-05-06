@@ -6,9 +6,12 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import type { PublicProfile } from '@/app/api/profile/[username]/route';
 import { useT } from '@/hooks/useT';
+import { useLang } from '@/contexts/LanguageContext';
+import { LEAGUE_NAMES } from '@/lib/i18n';
 
 export default function PublicProfilePage() {
   const t = useT();
+  const { lang } = useLang();
   const params = useParams<{ username: string }>();
   const username = params.username;
   const { user } = useUser();
@@ -134,7 +137,7 @@ export default function PublicProfilePage() {
               <div key={league.leagueId} className="card">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-bold text-white text-sm">
-                    {league.leagueFlag} {league.leagueName}
+                    {league.leagueFlag} {LEAGUE_NAMES[lang][league.leagueId] ?? league.leagueName}
                   </span>
                   <span className={`text-sm font-black ${
                     league.accuracy >= 60 ? 'text-green-400' :
