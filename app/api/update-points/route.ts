@@ -63,8 +63,16 @@ export async function GET(req: NextRequest) {
     league_id: number | null; points_earned: number | null;
   };
 
+  // تخطى التوقعات القديمة التي لا تحتوي league_id — لا يمكن معالجتها
+  const processable = (pending as PredRow[]).filter(p => p.league_id !== null);
+  const skippedNoLeague = pending.length - processable.length;
+  if (skippedNoLeague > 0) {
+    console.warn(`[CRON] skipped ${skippedNoLeague} predictions with null league_id (legacy data)`);
+  }
+  if (processable.length === 0) return NextResponse.json({ updated: 0, skippedLegacy: skippedNoLeague });
+
   // ── جلب كل مباراة مباشرة بـ ID ──────────────────────────────────────────────
-  const matchIds = Array.from(new Set(pending.map((p: PredRow) => p.match_id)));
+  const matchIds = Array.from(new Set(processable.map(p => p.match_id)));
   console.log(`[CRON] unique match IDs to fetch (${matchIds.length}):`, matchIds);
 
   const fixtureMap = new Map<string, FixtureData>();
@@ -82,7 +90,8 @@ export async function GET(req: NextRequest) {
     } else if (result.status === 'rejected') {
       console.error(`[CRON] fixture ${id}: FETCH FAILED —`, result.reason);
     } else {
-      console.warn(`[CRON] fixture ${id}: API returned null (unknown match_id?)`);
+      // Sportmonks رجع null — match_id غير معروف، نتخطى بدون إعادة محاولة
+      console.warn(`[CRON] fixture ${id}: Sportmonks returned null — skipping permanently`);
     }
   });
 
@@ -132,7 +141,7 @@ export async function GET(req: NextRequest) {
       awayGoals,
     });
 
-    const matchPredictions = (pending as PredRow[]).filter(p => p.match_id === matchId);
+    const matchPredictions = processable.filter(p => p.match_id === matchId);
 
     for (const pred of matchPredictions) {
       const points = calculatePoints(
