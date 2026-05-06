@@ -19,7 +19,6 @@ function PredictContent() {
   const [matchStats,  setMatchStats]  = useState<Record<string, MatchStats>>({});
   const [loading,     setLoading]     = useState(true);
   const [selectedLeague, setSelectedLeague] = useState<number>(LEAGUES.SAUDI.id);
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'my-predictions'>('upcoming');
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const fixtureGen = useRef(0); // generation counter للمباريات فقط
 
@@ -140,8 +139,7 @@ function PredictContent() {
     );
   }
 
-  const upcomingFixtures     = fixtures.filter(f => f.fixture.status.short === 'NS');
-  const myPredictionFixtures = fixtures.filter(f => predictions[String(f.fixture.id)]);
+  const upcomingFixtures = fixtures.filter(f => f.fixture.status.short === 'NS');
 
   // تنسيق التاريخ للعرض
   const dateLabelAr = dateParam
@@ -177,22 +175,9 @@ function PredictContent() {
       </div>
 
       <div className="flex items-center gap-2 mb-5">
-        <button
-          onClick={() => setActiveTab('upcoming')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-            activeTab === 'upcoming' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'
-          }`}
-        >
+        <span className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white">
           المباريات القادمة ({upcomingFixtures.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('my-predictions')}
-          className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-            activeTab === 'my-predictions' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'
-          }`}
-        >
-          توقعاتي ({Object.keys(predictions).length})
-        </button>
+        </span>
         <Link
           href="/history"
           className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors mr-auto"
@@ -232,50 +217,23 @@ function PredictContent() {
             <div key={i} className="card animate-pulse h-56 bg-slate-700/50" />
           ))}
         </div>
-      ) : activeTab === 'upcoming' ? (
-        upcomingFixtures.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {upcomingFixtures.map(fixture => (
-              <PredictionCard
-                key={`${fixture.fixture.id}-${predictions[String(fixture.fixture.id)] ? 'predicted' : 'open'}`}
-                fixture={fixture}
-                existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
-                onSubmit={handleSubmit}
-                stats={matchStats[String(fixture.fixture.id)] ?? null}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="card text-center py-16 text-slate-400">
-            <p className="text-4xl mb-3">✅</p>
-            <p className="font-semibold">لا توجد مباريات قادمة للتوقع حالياً</p>
-          </div>
-        )
+      ) : upcomingFixtures.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {upcomingFixtures.map(fixture => (
+            <PredictionCard
+              key={`${fixture.fixture.id}-${predictions[String(fixture.fixture.id)] ? 'predicted' : 'open'}`}
+              fixture={fixture}
+              existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
+              onSubmit={handleSubmit}
+              stats={matchStats[String(fixture.fixture.id)] ?? null}
+            />
+          ))}
+        </div>
       ) : (
-        myPredictionFixtures.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {myPredictionFixtures.map(fixture => (
-              <PredictionCard
-                key={`${fixture.fixture.id}-${predictions[String(fixture.fixture.id)] ? 'predicted' : 'open'}`}
-                fixture={fixture}
-                existingPrediction={predictions[String(fixture.fixture.id)] ?? null}
-                onSubmit={handleSubmit}
-                stats={matchStats[String(fixture.fixture.id)] ?? null}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="card text-center py-16 text-slate-400">
-            <p className="text-4xl mb-3">🎯</p>
-            <p className="font-semibold">لم تسجل أي توقعات بعد</p>
-            <button
-              onClick={() => setActiveTab('upcoming')}
-              className="mt-4 btn-primary text-sm px-6 py-2"
-            >
-              ابدأ التوقع الآن
-            </button>
-          </div>
-        )
+        <div className="card text-center py-16 text-slate-400">
+          <p className="text-4xl mb-3">✅</p>
+          <p className="font-semibold">لا توجد مباريات قادمة للتوقع حالياً</p>
+        </div>
       )}
     </div>
   );
