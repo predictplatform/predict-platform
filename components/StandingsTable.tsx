@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image';
+import { useT } from '@/hooks/useT';
 
 interface StandingTeam {
   rank: number;
@@ -34,6 +37,8 @@ function getRowClass(description: string | null): string {
 }
 
 export function StandingsTable({ standings, leagueName }: Props) {
+  const t = useT();
+
   return (
     <div className="card p-0 overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-700 bg-slate-800/80">
@@ -45,14 +50,14 @@ export function StandingsTable({ standings, leagueName }: Props) {
           <thead>
             <tr className="text-slate-400 text-xs border-b border-slate-700">
               <th className="py-2 px-3 text-right w-8">#</th>
-              <th className="py-2 px-3 text-right">الفريق</th>
-              <th className="py-2 px-3 text-center w-8">لع</th>
-              <th className="py-2 px-3 text-center w-8">ف</th>
-              <th className="py-2 px-3 text-center w-8">ت</th>
-              <th className="py-2 px-3 text-center w-8">خ</th>
-              <th className="py-2 px-3 text-center w-12">أه</th>
-              <th className="py-2 px-3 text-center w-8">±</th>
-              <th className="py-2 px-3 text-center w-10 font-bold text-white">نق</th>
+              <th className="py-2 px-3 text-right">{t.standings.colTeam}</th>
+              <th className="py-2 px-3 text-center w-8">{t.standings.colPlayed}</th>
+              <th className="py-2 px-3 text-center w-8">{t.standings.colWin}</th>
+              <th className="py-2 px-3 text-center w-8">{t.standings.colDraw}</th>
+              <th className="py-2 px-3 text-center w-8">{t.standings.colLose}</th>
+              <th className="py-2 px-3 text-center w-12">{t.standings.colGoals}</th>
+              <th className="py-2 px-3 text-center w-8">{t.standings.colDiff}</th>
+              <th className="py-2 px-3 text-center w-10 font-bold text-white">{t.standings.colPoints}</th>
             </tr>
           </thead>
           <tbody>
@@ -100,15 +105,15 @@ export function StandingsTable({ standings, leagueName }: Props) {
       <div className="px-4 py-2 border-t border-slate-700 flex flex-wrap gap-3 text-xs text-slate-400">
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-sm bg-blue-500" />
-          <span>دوري الأبطال</span>
+          <span>{t.standings.legendCL}</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-sm bg-orange-500" />
-          <span>الدوري الأوروبي</span>
+          <span>{t.standings.legendEL}</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded-sm bg-red-500" />
-          <span>هبوط</span>
+          <span>{t.standings.legendRel}</span>
         </div>
       </div>
     </div>

@@ -9,8 +9,10 @@ import { Prediction } from '@/lib/supabase';
 import type { MatchStats } from '@/app/api/predictions/stats/route';
 import Link from 'next/link';
 import { LeagueSelector } from '@/components/LeagueSelector';
+import { useT } from '@/hooks/useT';
 
 function PredictContent() {
+  const t = useT();
   const { isSignedIn, isLoaded: authLoaded, user } = useUser();
   const searchParams = useSearchParams();
   const dateParam = searchParams.get('date'); // YYYY-MM-DD أو null
@@ -119,9 +121,9 @@ function PredictContent() {
       }
       const saved: Prediction = await res.json();
       setPredictions(prev => ({ ...prev, [matchId]: saved }));
-      showToast('تم حفظ توقعك بنجاح ✓', 'success');
+      showToast(t.predict.toastSuccess, 'success');
     } catch (e) {
-      showToast(`حدث خطأ: ${e instanceof Error ? e.message : 'حاول مجدداً'}`, 'error');
+      showToast(`${t.predict.toastError} ${e instanceof Error ? e.message : ''}`, 'error');
       throw e;
     }
   };
@@ -130,10 +132,10 @@ function PredictContent() {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
         <p className="text-6xl mb-4">🔐</p>
-        <h1 className="text-2xl font-black text-white mb-3">سجل دخولك للتوقع</h1>
-        <p className="text-slate-400 mb-6">يجب تسجيل الدخول لتتمكن من حفظ توقعاتك وتجميع النقاط</p>
+        <h1 className="text-2xl font-black text-white mb-3">{t.predict.notSignedTitle}</h1>
+        <p className="text-slate-400 mb-6">{t.predict.notSignedDesc}</p>
         <Link href="/" className="btn-primary px-8 py-3 text-base">
-          تسجيل الدخول / إنشاء حساب
+          {t.predict.loginBtn}
         </Link>
       </div>
     );
@@ -141,9 +143,8 @@ function PredictContent() {
 
   const upcomingFixtures = fixtures.filter(f => f.fixture.status.short === 'NS');
 
-  // تنسيق التاريخ للعرض
   const dateLabelAr = dateParam
-    ? new Date(dateParam + 'T12:00:00').toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    ? new Date(dateParam + 'T12:00:00').toLocaleDateString(t.locale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
     : null;
 
   return (
@@ -158,31 +159,31 @@ function PredictContent() {
 
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-black text-white">توقعاتي 🎯</h1>
+          <h1 className="text-2xl font-black text-white">{t.predict.title}</h1>
           {dateLabelAr ? (
-            <p className="text-slate-400 text-sm mt-1">مباريات {dateLabelAr}</p>
+            <p className="text-slate-400 text-sm mt-1">{t.predict.matchesOf} {dateLabelAr}</p>
           ) : user && (
             <p className="text-slate-400 text-sm mt-1">
-              مرحباً {user.firstName ?? user.username}! توقع نتائج المباريات القادمة
+              {t.predict.welcomeHello} {user.firstName ?? user.username}! {t.predict.welcomeMsg}
             </p>
           )}
         </div>
         {dateParam && (
           <Link href="/predict" className="text-xs text-slate-400 hover:text-white transition-colors">
-            ← العودة للكل
+            {t.predict.backToAll}
           </Link>
         )}
       </div>
 
       <div className="flex items-center gap-2 mb-5">
         <span className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white">
-          المباريات القادمة ({upcomingFixtures.length})
+          {t.predict.upcomingBadge} ({upcomingFixtures.length})
         </span>
         <Link
           href="/history"
           className="px-4 py-2 rounded-lg text-sm font-bold bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors mr-auto"
         >
-          سجل كامل 📋
+          {t.predict.fullHistory}
         </Link>
       </div>
 
@@ -195,9 +196,9 @@ function PredictContent() {
           <div className="card mb-5 border border-amber-700/40 bg-amber-900/10">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-amber-400">
-                توقعاتك: {total}/10 — وصّل 10 توقعات عشان تدخل الليدربورد! 🎯
+                {total}/10 — {t.predict.leaderboardNeed}
               </span>
-              <span className="text-xs text-slate-500">{10 - total} باقي</span>
+              <span className="text-xs text-slate-500">{10 - total} {t.predict.remaining}</span>
             </div>
             <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
               <div
@@ -232,7 +233,7 @@ function PredictContent() {
       ) : (
         <div className="card text-center py-16 text-slate-400">
           <p className="text-4xl mb-3">✅</p>
-          <p className="font-semibold">لا توجد مباريات قادمة للتوقع حالياً</p>
+          <p className="font-semibold">{t.predict.noUpcoming}</p>
         </div>
       )}
     </div>

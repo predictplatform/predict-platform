@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { LeaderboardTable } from '@/components/Leaderboard';
 import { LeagueSelector } from '@/components/LeagueSelector';
 import type { LeaderboardEntry } from '@/app/api/leaderboard/route';
+import { useT } from '@/hooks/useT';
 
 export default function LeaderboardPage() {
+  const t = useT();
   const { user } = useUser();
   const [selectedLeague, setSelectedLeague] = useState<number | null>(null);
   const [qualified,  setQualified]  = useState<LeaderboardEntry[]>([]);
@@ -44,10 +46,10 @@ export default function LeaderboardPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-black text-white">الليدربورد 🏆</h1>
+        <h1 className="text-2xl font-black text-white">{t.leaderboard.title}</h1>
         {myRank > 0 && (
           <div className="card py-2 px-4 text-sm">
-            <span className="text-slate-400">مركزك: </span>
+            <span className="text-slate-400">{t.leaderboard.yourRank} </span>
             <span className="font-black text-blue-400 text-lg">#{myRank}</span>
           </div>
         )}
@@ -58,7 +60,7 @@ export default function LeaderboardPage() {
         selected={selectedLeague}
         onChange={setSelectedLeague}
         withAll
-        allLabel="عام"
+        allLabel={t.leaderboard.allLabel}
         className="mb-6"
       />
 
@@ -128,17 +130,17 @@ export default function LeaderboardPage() {
           {/* في طور التأهل */}
           {qualifying.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-base font-black text-slate-300 mb-1">في طور التأهل 🎯</h2>
+              <h2 className="text-base font-black text-slate-300 mb-1">{t.leaderboard.qualifying}</h2>
               <p className="text-xs text-slate-500 mb-4">
-                يحتاج كل مستخدم {MIN} توقعات على الأقل في هذا التصنيف للدخول في الترتيب الرسمي
+                {t.leaderboard.qualifyingDesc} {MIN} {t.leaderboard.qualifyingDesc2}
               </p>
               <div className="card p-0 overflow-hidden opacity-75">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-slate-400 text-xs border-b border-slate-700 bg-slate-800/60">
-                      <th className="py-3 px-4 text-right">المستخدم</th>
-                      <th className="py-3 px-4 text-center">التوقعات</th>
-                      <th className="py-3 px-4 text-center">المتبقي</th>
+                      <th className="py-3 px-4 text-right">{t.leaderboard.colUser}</th>
+                      <th className="py-3 px-4 text-center">{t.leaderboard.colPreds}</th>
+                      <th className="py-3 px-4 text-center">{t.leaderboard.colRemaining}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -156,7 +158,7 @@ export default function LeaderboardPage() {
                               </div>
                               <span className={`font-semibold ${isCurrentUser ? 'text-blue-400' : 'text-white'}`}>
                                 {entry.username}
-                                {isCurrentUser && <span className="text-xs text-slate-400 mr-1">(أنت)</span>}
+                                {isCurrentUser && <span className="text-xs text-slate-400 mr-1">{t.leaderboard.youLabel}</span>}
                               </span>
                             </Link>
                           </td>
@@ -164,7 +166,7 @@ export default function LeaderboardPage() {
                             {entry.total_predictions}/{MIN}
                           </td>
                           <td className="py-3 px-4 text-center text-amber-400 font-bold text-xs">
-                            باقي {remaining}
+                            {t.leaderboard.remaining} {remaining}
                           </td>
                         </tr>
                       );

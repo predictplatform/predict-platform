@@ -5,8 +5,12 @@ import { useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { FAVORITE_TEAMS } from '@/lib/teams';
+import { useT } from '@/hooks/useT';
+import { useLang } from '@/contexts/LanguageContext';
 
 function SetupContent() {
+  const t = useT();
+  const { lang } = useLang();
   const { isSignedIn, user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,7 +66,7 @@ function SetupContent() {
       if (!res.ok) { setError(data.error); return; }
       router.replace('/');
     } catch {
-      setError('حدث خطأ، حاول مجدداً');
+      setError(lang === 'ar' ? 'حدث خطأ، حاول مجدداً' : 'An error occurred, please try again');
     } finally {
       setLoading(false);
     }
@@ -80,41 +84,39 @@ function SetupContent() {
     <div className="max-w-md mx-auto px-4 py-12">
       <div className="text-center mb-8">
         <p className="text-5xl mb-3">⚽</p>
-        <h1 className="text-2xl font-black text-white mb-2">أكمل ملفك الشخصي</h1>
-        <p className="text-slate-400 text-sm">خطوة واحدة قبل الانضمام للمنافسة</p>
+        <h1 className="text-2xl font-black text-white mb-2">{t.setup.title}</h1>
+        <p className="text-slate-400 text-sm">{t.setup.subtitle}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="card space-y-5">
-        {/* اسم المستخدم */}
         <div>
           <label className="block text-sm font-bold text-slate-300 mb-2">
-            اسم المستخدم <span className="text-red-400">*</span>
+            {t.setup.usernameLabel} <span className="text-red-400">*</span>
           </label>
           <input
             type="text"
             value={username}
             onChange={e => setUsername(e.target.value)}
-            placeholder="مثال: AbdullahSA"
+            placeholder={t.setup.usernamePlaceholder}
             maxLength={20}
             required
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
           />
           <p className="text-xs text-slate-500 mt-1">
-            يظهر في الليدربورد — 3 إلى 20 حرفاً
+            {t.setup.usernameHint}
           </p>
         </div>
 
-        {/* الفريق المفضل */}
         <div>
           <label className="block text-sm font-bold text-slate-300 mb-2">
-            الفريق المفضل <span className="text-slate-500 font-normal">(اختياري)</span>
+            {t.setup.teamLabel} <span className="text-slate-500 font-normal">{t.setup.teamOptional}</span>
           </label>
           <select
             value={favoriteTeam}
             onChange={e => setFavoriteTeam(e.target.value)}
             className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
           >
-            <option value="">— اختر فريقك المفضل —</option>
+            <option value="">{t.setup.teamPlaceholder}</option>
             {FAVORITE_TEAMS.map(group => (
               <optgroup key={group.group} label={group.group}>
                 {group.teams.map(team => (
@@ -136,7 +138,7 @@ function SetupContent() {
           disabled={loading || username.trim().length < 3}
           className="w-full btn-primary py-3 font-bold text-base disabled:opacity-50"
         >
-          {loading ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات ✓' : 'ابدأ المنافسة 🚀'}
+          {loading ? t.setup.savingBtn : isEditing ? t.setup.saveEditBtn : t.setup.startBtn}
         </button>
       </form>
     </div>

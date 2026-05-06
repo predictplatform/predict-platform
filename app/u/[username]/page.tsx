@@ -5,8 +5,10 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import type { PublicProfile } from '@/app/api/profile/[username]/route';
+import { useT } from '@/hooks/useT';
 
 export default function PublicProfilePage() {
+  const t = useT();
   const params = useParams<{ username: string }>();
   const username = params.username;
   const { user } = useUser();
@@ -42,9 +44,9 @@ export default function PublicProfilePage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
         <p className="text-6xl mb-4">🔍</p>
-        <h1 className="text-2xl font-black text-white mb-3">المستخدم غير موجود</h1>
-        <p className="text-slate-400 mb-6">لا يوجد مستخدم باسم &quot;{username}&quot;</p>
-        <Link href="/leaderboard" className="btn-primary px-6 py-2">الليدربورد</Link>
+        <h1 className="text-2xl font-black text-white mb-3">{t.profile.notFoundTitle}</h1>
+        <p className="text-slate-400 mb-6">{t.profile.notFoundDesc} &quot;{username}&quot;</p>
+        <Link href="/leaderboard" className="btn-primary px-6 py-2">{t.profile.leaderboardBtn}</Link>
       </div>
     );
   }
@@ -65,11 +67,11 @@ export default function PublicProfilePage() {
               <p className="text-slate-400 text-sm">❤️ {profile.favorite_team}</p>
             )}
             <p className="text-amber-400 text-sm font-bold mt-0.5">
-              {profile.total_points} نقطة
+              {profile.total_points} {t.profile.totalPoints}
             </p>
             <p className="text-slate-500 text-xs mt-0.5">
-              عضو منذ:{' '}
-              {new Date(profile.created_at).toLocaleDateString('ar-SA', {
+              {t.profile.memberSince}{' '}
+              {new Date(profile.created_at).toLocaleDateString(t.locale, {
                 weekday: 'long',
                 day:     'numeric',
                 month:   'long',
@@ -80,7 +82,7 @@ export default function PublicProfilePage() {
         </div>
         {isOwnProfile && (
           <Link href="/setup?edit=1" className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex-shrink-0">
-            تعديل الملف
+            {t.profile.editProfile}
           </Link>
         )}
       </div>
@@ -89,7 +91,7 @@ export default function PublicProfilePage() {
       {stats.total >= 10 ? (
         <div className="card mb-4 flex items-center gap-3 border border-green-700/40 bg-green-900/10 py-3">
           <span className="text-xl">✅</span>
-          <span className="text-sm font-bold text-green-400">مؤهل في الليدربورد</span>
+          <span className="text-sm font-bold text-green-400">{t.profile.qualified}</span>
         </div>
       ) : stats.total > 0 ? (
         <div className="card mb-4 border border-amber-700/40 bg-amber-900/10">
@@ -97,7 +99,7 @@ export default function PublicProfilePage() {
             <div className="flex items-center gap-2">
               <span className="text-base">🎯</span>
               <span className="text-sm font-bold text-amber-400">
-                في طور التأهل — باقي {10 - stats.total} توقعات للدخول للليدربورد
+                {t.profile.qualifying}{10 - stats.total} {t.profile.qualifyingEnd}
               </span>
             </div>
             <span className="text-xs text-slate-500">{stats.total}/10</span>
@@ -113,20 +115,20 @@ export default function PublicProfilePage() {
 
       {/* الإحصائيات العامة */}
       <section className="mb-6">
-        <h2 className="text-lg font-black text-white mb-3">الإحصائيات</h2>
+        <h2 className="text-lg font-black text-white mb-3">{t.profile.statsTitle}</h2>
         <div className="grid grid-cols-2 gap-3">
-          <StatCard label="إجمالي التوقعات" value={stats.total} icon="🎯" color="text-white" />
-          <StatCard label="نسبة الدقة" value={`${stats.accuracy}%`} icon="📊"
+          <StatCard label={t.profile.totalPreds} value={stats.total} icon="🎯" color="text-white" />
+          <StatCard label={t.profile.accuracyLabel} value={`${stats.accuracy}%`} icon="📊"
             color={stats.accuracy >= 60 ? 'text-green-400' : stats.accuracy >= 40 ? 'text-amber-400' : 'text-red-400'} />
-          <StatCard label="توقعات صحيحة" value={stats.correct} icon="✅" color="text-green-400" />
-          <StatCard label="توقعات خاطئة" value={stats.wrong} icon="❌" color="text-red-400" />
+          <StatCard label={t.profile.correctPreds} value={stats.correct} icon="✅" color="text-green-400" />
+          <StatCard label={t.profile.wrongPreds} value={stats.wrong} icon="❌" color="text-red-400" />
         </div>
       </section>
 
       {/* الإحصائيات حسب الدوري */}
       {stats.byLeague.length > 0 && (
         <section>
-          <h2 className="text-lg font-black text-white mb-3">حسب الدوري</h2>
+          <h2 className="text-lg font-black text-white mb-3">{t.profile.byLeague}</h2>
           <div className="space-y-3">
             {stats.byLeague.map(league => (
               <div key={league.leagueId} className="card">
@@ -152,15 +154,15 @@ export default function PublicProfilePage() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div>
-                    <p className="text-slate-400">إجمالي</p>
+                    <p className="text-slate-400">{t.profile.colTotal}</p>
                     <p className="font-black text-white text-base">{league.total}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400">صحيح</p>
+                    <p className="text-slate-400">{t.profile.colCorrect}</p>
                     <p className="font-black text-green-400 text-base">{league.correct}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400">خطأ</p>
+                    <p className="text-slate-400">{t.profile.colWrong}</p>
                     <p className="font-black text-red-400 text-base">{league.wrong}</p>
                   </div>
                 </div>
@@ -175,13 +177,13 @@ export default function PublicProfilePage() {
           <p className="text-4xl mb-3">🎯</p>
           {isOwnProfile ? (
             <>
-              <p className="mb-4">لم تسجل أي توقعات بعد</p>
+              <p className="mb-4">{t.profile.noPreds}</p>
               <Link href="/predict" className="btn-primary px-6 py-2 text-sm">
-                ابدأ التوقع الآن
+                {t.profile.startPredict}
               </Link>
             </>
           ) : (
-            <p>لم يسجل {profile.username} أي توقعات بعد</p>
+            <p>{t.profile.noPredsOther} {profile.username} {t.profile.noPredsOtherEnd}</p>
           )}
         </div>
       )}

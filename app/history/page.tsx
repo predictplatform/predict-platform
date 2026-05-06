@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { FixtureData, LEAGUES } from '@/lib/football-api';
 import { Prediction } from '@/lib/supabase';
 import { getPointsLabel, getPointsColor } from '@/lib/points';
+import { useT } from '@/hooks/useT';
+import { useLang } from '@/contexts/LanguageContext';
 
 type EnrichedPrediction = Prediction & {
   fixture: FixtureData | null;
@@ -20,6 +22,8 @@ function pointsBg(p: number | null): string {
 }
 
 export default function HistoryPage() {
+  const t = useT();
+  const { lang } = useLang();
   const { isSignedIn, isLoaded } = useUser();
   const [items, setItems]     = useState<EnrichedPrediction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,8 +70,8 @@ export default function HistoryPage() {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
         <p className="text-6xl mb-4">🔐</p>
-        <h1 className="text-2xl font-black text-white mb-3">سجل دخولك أولاً</h1>
-        <Link href="/" className="btn-primary px-8 py-3">تسجيل الدخول</Link>
+        <h1 className="text-2xl font-black text-white mb-3">{t.history.notSignedTitle}</h1>
+        <Link href="/" className="btn-primary px-8 py-3">{t.history.notSignedLogin}</Link>
       </div>
     );
   }
@@ -82,11 +86,11 @@ export default function HistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-black text-white">سجل توقعاتي 📋</h1>
-          <p className="text-slate-400 text-sm mt-1">كل توقعاتك السابقة مع النتائج والنقاط</p>
+          <h1 className="text-2xl font-black text-white">{t.history.title}</h1>
+          <p className="text-slate-400 text-sm mt-1">{t.history.subtitle}</p>
         </div>
         <Link href="/predict" className="text-xs text-slate-400 hover:text-white transition-colors">
-          ← التوقعات
+          {t.history.backToPredict}
         </Link>
       </div>
 
@@ -95,17 +99,17 @@ export default function HistoryPage() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           <div className="card text-center py-3">
             <p className="text-2xl font-black text-white">{items.length}</p>
-            <p className="text-xs text-slate-400 mt-1">إجمالي التوقعات</p>
+            <p className="text-xs text-slate-400 mt-1">{t.history.totalPredictions}</p>
           </div>
           <div className="card text-center py-3">
             <p className="text-2xl font-black text-amber-400">{totalPoints}</p>
-            <p className="text-xs text-slate-400 mt-1">النقاط المكتسبة</p>
+            <p className="text-xs text-slate-400 mt-1">{t.history.pointsEarned}</p>
           </div>
           <div className="card text-center py-3">
             <p className={`text-2xl font-black ${
               accuracy >= 60 ? 'text-green-400' : accuracy >= 40 ? 'text-amber-400' : 'text-slate-300'
             }`}>{accuracy}%</p>
-            <p className="text-xs text-slate-400 mt-1">نسبة الدقة</p>
+            <p className="text-xs text-slate-400 mt-1">{t.history.accuracy}</p>
           </div>
         </div>
       )}
@@ -120,9 +124,9 @@ export default function HistoryPage() {
       ) : items.length === 0 ? (
         <div className="card text-center py-16 text-slate-400">
           <p className="text-4xl mb-3">🎯</p>
-          <p className="font-semibold">لم تسجل أي توقعات بعد</p>
+          <p className="font-semibold">{t.history.noPreds}</p>
           <Link href="/predict" className="mt-4 btn-primary text-sm px-6 py-2 inline-block">
-            توقع الآن
+            {t.history.predictNow}
           </Link>
         </div>
       ) : (
@@ -131,7 +135,7 @@ export default function HistoryPage() {
             const f = item.fixture;
             const leagueInfo = f ? Object.values(LEAGUES).find(l => l.id === f.league.id) : null;
             const isFinished = f ? ['FT', 'AET', 'PEN'].includes(f.fixture.status.short) : false;
-            const dateStr = new Date(item.created_at).toLocaleDateString('ar-SA', {
+            const dateStr = new Date(item.created_at).toLocaleDateString(t.locale, {
               month: 'short', day: 'numeric',
             });
 
@@ -174,8 +178,8 @@ export default function HistoryPage() {
                         )}
                       </div>
                       <div className="flex gap-1 text-[9px] text-slate-500">
-                        <span>توقعك</span>
-                        {isFinished && <><span>|</span><span>النتيجة</span></>}
+                        <span>{t.history.yourPred}</span>
+                        {isFinished && <><span>|</span><span>{t.history.result}</span></>}
                       </div>
                     </div>
 
@@ -186,9 +190,8 @@ export default function HistoryPage() {
                     </div>
                   </div>
                 ) : (
-                  /* لو ما رجعت بيانات المباراة */
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-500">توقعك: {item.home_goals} - {item.away_goals}</span>
+                    <span className="text-xs text-slate-500">{t.history.yourPred}: {item.home_goals} - {item.away_goals}</span>
                   </div>
                 )}
 
@@ -196,8 +199,8 @@ export default function HistoryPage() {
                 <div className="mt-3">
                   <span className={`text-xs font-bold px-3 py-1 rounded-full ${pointsBg(item.points_earned)}`}>
                     {item.points_earned !== null
-                      ? `+${item.points_earned} — ${getPointsLabel(item.points_earned)}`
-                      : 'في انتظار نتيجة المباراة ⏳'}
+                      ? `+${item.points_earned} — ${getPointsLabel(item.points_earned, lang)}`
+                      : t.history.pending}
                   </span>
                 </div>
               </div>

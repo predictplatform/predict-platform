@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { StandingsTable } from '@/components/StandingsTable';
 import { LEAGUES } from '@/lib/football-api';
 import { LeagueSelector } from '@/components/LeagueSelector';
+import { useT } from '@/hooks/useT';
 
 export default function StandingsPage() {
+  const t = useT();
   const [selectedLeague, setSelectedLeague] = useState<number>(LEAGUES.SAUDI.id);
   const [standings, setStandings] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,9 +37,9 @@ export default function StandingsPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-black text-white">جدول الترتيب</h1>
+        <h1 className="text-2xl font-black text-white">{t.standings.title}</h1>
         <span className="text-xs bg-blue-600/30 text-blue-400 border border-blue-600/50 px-2 py-1 rounded-full font-semibold">
-          موسم 2025/26
+          {t.standings.season}
         </span>
       </div>
 
@@ -54,7 +56,7 @@ export default function StandingsPage() {
       ) : (
         <div className="card text-center py-16 text-slate-400">
           <p className="text-4xl mb-3">📊</p>
-          <p className="font-semibold">الترتيب غير متاح حالياً</p>
+          <p className="font-semibold">{t.standings.noData}</p>
         </div>
       )}
     </div>

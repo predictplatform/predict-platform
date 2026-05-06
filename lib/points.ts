@@ -1,7 +1,9 @@
+import type { Lang } from './i18n';
+
 type Score = { homeGoals: number; awayGoals: number };
 
 export function calculatePoints(pred: Score, result: Score): number {
-  // نتيجة دقيقة 100%
+  // Exact result 100%
   if (pred.homeGoals === result.homeGoals && pred.awayGoals === result.awayGoals) return 5;
 
   const predDir = getOutcome(pred.homeGoals, pred.awayGoals);
@@ -21,14 +23,32 @@ function getOutcome(h: number, a: number): 'home' | 'draw' | 'away' {
   return h > a ? 'home' : h < a ? 'away' : 'draw';
 }
 
-export function getPointsLabel(points: number | null): string {
-  if (points === null) return 'في الانتظار';
+const LABELS: Record<Lang, Record<string, string>> = {
+  ar: {
+    pending:   'في الانتظار',
+    exact:     'نتيجة دقيقة ⭐',
+    dirAndGap: 'اتجاه + فارق ✅',
+    dirOnly:   'اتجاه صحيح 👍',
+    wrong:     'غلط كلياً ❌',
+  },
+  en: {
+    pending:   'Pending',
+    exact:     'Exact result ⭐',
+    dirAndGap: 'Direction + goal diff ✅',
+    dirOnly:   'Correct direction 👍',
+    wrong:     'Completely wrong ❌',
+  },
+};
+
+export function getPointsLabel(points: number | null, lang: Lang = 'ar'): string {
+  const l = LABELS[lang];
+  if (points === null) return l.pending;
   switch (points) {
-    case 5: return 'نتيجة دقيقة ⭐';
-    case 4: return 'اتجاه + فارق ✅';
-    case 3: return 'اتجاه صحيح 👍';
-    case 0: return 'غلط كلياً ❌';
-    default: return `${points} نقاط`;
+    case 5: return l.exact;
+    case 4: return l.dirAndGap;
+    case 3: return l.dirOnly;
+    case 0: return l.wrong;
+    default: return lang === 'ar' ? `${points} نقاط` : `${points} pts`;
   }
 }
 

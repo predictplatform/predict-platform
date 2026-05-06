@@ -1,6 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Profile } from '@/lib/supabase';
+import { useT } from '@/hooks/useT';
 
 export interface LeaderboardEntry extends Profile {
   rank: number;
@@ -22,16 +25,18 @@ const medalColors: Record<number, string> = {
 };
 
 export function LeaderboardTable({ entries, currentUserId }: Props) {
+  const t = useT();
+
   return (
     <div className="card p-0 overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="text-slate-400 text-xs border-b border-slate-700 bg-slate-800/60">
-            <th className="py-3 px-4 text-right w-12">#</th>
-            <th className="py-3 px-4 text-right">المستخدم</th>
-            <th className="py-3 px-4 text-center">الدقة</th>
-            <th className="py-3 px-4 text-center">النقاط</th>
-            <th className="py-3 px-4 text-center font-bold text-white">المعدّلة</th>
+            <th className="py-3 px-4 text-right w-12">{t.leaderboardTable.colHash}</th>
+            <th className="py-3 px-4 text-right">{t.leaderboardTable.colUser}</th>
+            <th className="py-3 px-4 text-center">{t.leaderboardTable.colAccuracy}</th>
+            <th className="py-3 px-4 text-center">{t.leaderboardTable.colPoints}</th>
+            <th className="py-3 px-4 text-center font-bold text-white">{t.leaderboardTable.colAdjusted}</th>
           </tr>
         </thead>
         <tbody>
@@ -45,14 +50,14 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                   isCurrentUser ? 'bg-blue-900/20 border-blue-700/50' : 'hover:bg-slate-700/20'
                 }`}
               >
-                {/* الترتيب */}
+                {/* Rank */}
                 <td className="py-3 px-4">
                   <span className={`font-black text-base ${medalColors[entry.rank] ?? 'text-slate-400'}`}>
                     {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
                   </span>
                 </td>
 
-                {/* المستخدم */}
+                {/* User */}
                 <td className="py-3 px-4">
                   <Link href={`/u/${encodeURIComponent(entry.username)}`} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     {entry.avatar_url ? (
@@ -71,12 +76,12 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                     )}
                     <span className={`font-semibold ${isCurrentUser ? 'text-blue-400' : 'text-white'}`}>
                       {entry.username}
-                      {isCurrentUser && <span className="text-xs text-slate-400 mr-1">(أنت)</span>}
+                      {isCurrentUser && <span className="text-xs text-slate-400 mr-1">{t.leaderboardTable.youLabel}</span>}
                     </span>
                   </Link>
                 </td>
 
-                {/* الدقة */}
+                {/* Accuracy */}
                 <td className="py-3 px-4 text-center">
                   <span className={`text-sm font-bold ${
                     accuracyPct >= 60 ? 'text-green-400' :
@@ -86,12 +91,12 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
                   </span>
                 </td>
 
-                {/* النقاط الأصلية */}
+                {/* Raw points */}
                 <td className="py-3 px-4 text-center text-slate-400 text-sm">
                   {entry.total_points}
                 </td>
 
-                {/* النقاط المعدلة */}
+                {/* Adjusted points */}
                 <td className="py-3 px-4 text-center">
                   <span className={`font-black text-lg ${
                     entry.rank === 1 ? 'text-amber-400' : 'text-white'
@@ -107,7 +112,7 @@ export function LeaderboardTable({ entries, currentUserId }: Props) {
 
       {entries.length === 0 && (
         <div className="text-center py-10 text-slate-400">
-          لا يوجد لاعبون مؤهلون بعد. وصّل 10 توقعات لتدخل الترتيب! 🏆
+          {t.leaderboardTable.noPlayers}
         </div>
       )}
     </div>

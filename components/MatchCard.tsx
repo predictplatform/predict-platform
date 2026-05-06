@@ -1,5 +1,8 @@
+'use client';
+
 import Image from 'next/image';
 import { FixtureData, getMatchStatus, formatMatchTime, LEAGUES } from '@/lib/football-api';
+import { useT } from '@/hooks/useT';
 
 interface Props {
   fixture: FixtureData;
@@ -10,15 +13,14 @@ interface Props {
 }
 
 export function MatchCard({ fixture, showPredictButton = false, userPrediction, todayStr, tomorrowStr }: Props) {
+  const t = useT();
   const status = getMatchStatus(fixture);
   const time = formatMatchTime(fixture.fixture.date);
   const isFinished = ['FT', 'AET', 'PEN'].includes(fixture.fixture.status.short);
 
-  // إيجاد اسم الدوري بالعربية
   const leagueInfo = Object.values(LEAGUES).find(l => l.id === fixture.league.id);
 
-  // ─── حالة التوقع ──────────────────────────────────────────────────────────
-  const fixtureDateStr = fixture.fixture.date.substring(0, 10); // YYYY-MM-DD (UTC)
+  const fixtureDateStr = fixture.fixture.date.substring(0, 10);
   const today    = todayStr    ?? new Date().toISOString().split('T')[0];
   const tomorrow = tomorrowStr ?? new Date(Date.now() + 86400000).toISOString().split('T')[0];
   const short    = fixture.fixture.status.short;
@@ -37,14 +39,13 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction, 
       predictState = 'locked';
     } else if (isFuture) {
       predictState = 'soon';
-      soonDay = new Date(fixtureDateStr + 'T12:00:00').toLocaleDateString('ar-SA', { weekday: 'long' });
+      soonDay = new Date(fixtureDateStr + 'T12:00:00').toLocaleDateString(t.locale, { weekday: 'long' });
     }
-    // isPastDate → 'none' (لا يظهر شيء)
   }
 
   return (
     <div className="card hover:border-slate-600 transition-colors">
-      {/* Header: الدوري + الوقت */}
+      {/* Header: League + Time */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Image
@@ -64,14 +65,14 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction, 
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           )}
           <span className={`text-xs font-bold ${status.color}`}>
-            {isFinished ? 'انتهت' : status.live ? status.label : time}
+            {isFinished ? t.matchCard.finished : status.live ? status.label : time}
           </span>
         </div>
       </div>
 
       {/* Teams + Score */}
       <div className="flex items-center justify-between gap-2">
-        {/* الفريق المضيف */}
+        {/* Home team */}
         <div className="flex-1 flex flex-col items-center gap-1">
           <Image
             src={fixture.teams.home.logo}
@@ -86,7 +87,7 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction, 
           </span>
         </div>
 
-        {/* النتيجة */}
+        {/* Score */}
         <div className="flex flex-col items-center gap-1 min-w-[80px]">
           {fixture.goals.home !== null && fixture.goals.away !== null ? (
             <div className="text-3xl font-black text-white tabular-nums">
@@ -100,12 +101,12 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction, 
           )}
           {isFinished && fixture.score.halftime.home !== null && (
             <span className="text-xs text-slate-500">
-              {fixture.score.halftime.home} - {fixture.score.halftime.away} ش.أ
+              {fixture.score.halftime.home} - {fixture.score.halftime.away} {t.matchCard.halfTime}
             </span>
           )}
         </div>
 
-        {/* الفريق الضيف */}
+        {/* Away team */}
         <div className="flex-1 flex flex-col items-center gap-1">
           <Image
             src={fixture.teams.away.logo}
@@ -121,11 +122,11 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction, 
         </div>
       </div>
 
-      {/* توقع المستخدم (إن وجد) */}
+      {/* User prediction (if exists) */}
       {userPrediction && (
         <div className="mt-3 pt-3 border-t border-slate-700">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">توقعك:</span>
+            <span className="text-xs text-slate-400">{t.matchCard.yourPred}</span>
             <span className="text-sm font-bold text-blue-400">
               {userPrediction.home_goals} - {userPrediction.away_goals}
             </span>
@@ -134,16 +135,16 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction, 
                 userPrediction.points_earned === 5 ? 'text-amber-400' :
                 userPrediction.points_earned >= 3 ? 'text-green-400' : 'text-red-400'
               }`}>
-                +{userPrediction.points_earned} نقطة
+                +{userPrediction.points_earned} {t.matchCard.points}
               </span>
             ) : (
-              <span className="text-xs text-slate-500">تم تسجيل توقعك ✓</span>
+              <span className="text-xs text-slate-500">{t.matchCard.recorded}</span>
             )}
           </div>
         </div>
       )}
 
-      {/* زر التوقع / حالة التوقع */}
+      {/* Predict button / state */}
       {predictState !== 'none' && (
         <div className="mt-3 pt-3 border-t border-slate-700">
           {predictState === 'button' && (
@@ -151,17 +152,17 @@ export function MatchCard({ fixture, showPredictButton = false, userPrediction, 
               href={`/predict?date=${fixtureDateStr}`}
               className="block text-center btn-primary text-sm w-full"
             >
-              توقع النتيجة 🎯
+              {t.matchCard.predictBtn}
             </a>
           )}
           {predictState === 'locked' && (
             <p className="text-center text-xs text-slate-500 font-semibold py-1">
-              انطلقت المباراة — التوقع مغلق 🔒
+              {t.matchCard.matchLocked}
             </p>
           )}
           {predictState === 'soon' && (
             <p className="text-center text-xs text-slate-500 font-semibold py-1">
-              يفتح التوقع قريباً ⏳ يفتح {soonDay}
+              {t.matchCard.soonPrefix} {soonDay}
             </p>
           )}
         </div>

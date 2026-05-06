@@ -6,6 +6,8 @@ import { PredictionStats } from './PredictionStats';
 import { FixtureData, formatMatchTime, LEAGUES } from '@/lib/football-api';
 import { getPointsLabel, getPointsColor } from '@/lib/points';
 import type { MatchStats } from '@/app/api/predictions/stats/route';
+import { useT } from '@/hooks/useT';
+import { useLang } from '@/contexts/LanguageContext';
 
 interface Props {
   fixture: FixtureData;
@@ -18,7 +20,6 @@ interface Props {
   stats?: MatchStats | null;
 }
 
-// حقل الأهداف — نفس البنية قبل وبعد القفل، الأزرار تصبح invisible فقط
 function GoalInput({
   value,
   onDecrement,
@@ -35,7 +36,7 @@ function GoalInput({
       <button
         onClick={onDecrement}
         disabled={locked || value === 0}
-        aria-label="تقليل"
+        aria-label="decrement"
         className={`w-8 h-8 rounded-full border-2 border-slate-500 text-xl font-bold shrink-0
                     flex items-center justify-center text-white transition-all active:scale-95
                     hover:bg-slate-600 hover:border-slate-400
@@ -52,7 +53,7 @@ function GoalInput({
       <button
         onClick={onIncrement}
         disabled={locked || value === 15}
-        aria-label="زيادة"
+        aria-label="increment"
         className={`w-8 h-8 rounded-full border-2 border-slate-500 text-xl font-bold shrink-0
                     flex items-center justify-center text-white transition-all active:scale-95
                     hover:bg-slate-600 hover:border-slate-400
@@ -68,6 +69,8 @@ function GoalInput({
 const SITE_URL = 'https://dawri-tawaquat.com';
 
 export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }: Props) {
+  const t = useT();
+  const { lang } = useLang();
   const [homeGoals, setHomeGoals] = useState(existingPrediction?.home_goals ?? 0);
   const [awayGoals, setAwayGoals] = useState(existingPrediction?.away_goals ?? 0);
   const [loading, setLoading] = useState(false);
@@ -91,11 +94,10 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
   const home = fixture.teams.home.name;
   const away = fixture.teams.away.name;
 
-  // \uFE0F = Variation Selector-16 → يجبر ⚽ (U+26BD) على عرض emoji بدل text/مربع فارغ
   const twitterText = encodeURIComponent(
     `\u26BD\uFE0F توقعت: ${home} ${homeGoals} - ${awayGoals} ${away}\n\u{1F525} وأنت وش توقعك؟\n\u{1F447}\uFE0F تنافس معي في دوري التوقعات\n${SITE_URL}`
   );
-  const whatsappText = twitterText; // نفس النص تماماً
+  const whatsappText = twitterText;
   const twitterUrl  = `https://twitter.com/intent/tweet?text=${twitterText}`;
   const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
 
@@ -112,12 +114,11 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
         </span>
       </div>
 
-      {/* Teams + Score — نفس الـ layout تماماً في كل الحالات */}
+      {/* Teams + Score */}
       <div className="flex items-center gap-2">
 
-        {/* الفريق المضيف */}
+        {/* Home team */}
         <div className="flex-1 flex flex-col items-center gap-2 min-w-0 overflow-hidden">
-          {/* لوقو بحجم ثابت دائماً */}
           <div className="w-12 h-12 flex items-center justify-center shrink-0 overflow-hidden">
             <Image
               src={fixture.teams.home.logo}
@@ -128,13 +129,11 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
               className="object-contain max-w-full max-h-full"
             />
           </div>
-          {/* اسم الفريق بارتفاع ثابت */}
           <div className="h-8 flex items-center justify-center w-full">
             <span className="text-xs font-bold text-center text-white line-clamp-2 leading-tight">
               {fixture.teams.home.name}
             </span>
           </div>
-          {/* حقل الأهداف */}
           <GoalInput
             value={homeGoals}
             onDecrement={() => setHomeGoals(v => Math.max(0, v - 1))}
@@ -143,17 +142,17 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
           />
         </div>
 
-        {/* الفاصل المركزي */}
+        {/* Center divider */}
         <div className="flex flex-col items-center shrink-0 gap-1">
           <span className="text-xl font-black text-slate-500">-</span>
           {isFinished && existingPrediction?.points_earned !== undefined && (
             <span className={`text-xs font-bold ${getPointsColor(existingPrediction?.points_earned ?? null)}`}>
-              {getPointsLabel(existingPrediction?.points_earned ?? null)}
+              {getPointsLabel(existingPrediction?.points_earned ?? null, lang)}
             </span>
           )}
         </div>
 
-        {/* الفريق الضيف */}
+        {/* Away team */}
         <div className="flex-1 flex flex-col items-center gap-2 min-w-0">
           <div className="w-12 h-12 flex items-center justify-center shrink-0">
             <Image
@@ -179,26 +178,23 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
         </div>
       </div>
 
-      {/* بعد انتهاء المباراة — توقع المستخدم + النتيجة الفعلية + النقاط */}
+      {/* After match finished — prediction + actual result + points */}
       {isFinished && existingPrediction && (
         <div className="mt-4 pt-3 border-t border-slate-700">
           <div className="grid grid-cols-2 gap-2 mb-3">
-            {/* توقع المستخدم */}
             <div className="bg-slate-800/60 rounded-lg p-2 text-center">
-              <p className="text-[10px] text-slate-500 mb-1">توقعك</p>
+              <p className="text-[10px] text-slate-500 mb-1">{t.predCard.yourPredLabel}</p>
               <p className="text-xl font-black text-white tabular-nums">
                 {existingPrediction.home_goals} - {existingPrediction.away_goals}
               </p>
             </div>
-            {/* النتيجة الفعلية */}
             <div className="bg-slate-800/60 rounded-lg p-2 text-center">
-              <p className="text-[10px] text-slate-500 mb-1">النتيجة</p>
+              <p className="text-[10px] text-slate-500 mb-1">{t.predCard.resultLabel}</p>
               <p className="text-xl font-black text-blue-300 tabular-nums">
                 {fixture.goals.home ?? '–'} - {fixture.goals.away ?? '–'}
               </p>
             </div>
           </div>
-          {/* النقاط */}
           {existingPrediction.points_earned !== null ? (
             <div className={`rounded-lg py-2 text-center font-black text-base ${
               existingPrediction.points_earned === 5
@@ -207,31 +203,31 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
                   ? 'bg-green-500/20 text-green-400'
                   : 'bg-slate-700/60 text-slate-400'
             }`}>
-              {getPointsLabel(existingPrediction.points_earned)}
+              {getPointsLabel(existingPrediction.points_earned, lang)}
             </div>
           ) : (
             <div className="rounded-lg py-2 text-center text-xs text-slate-500 bg-slate-800/40">
-              جاري حساب النقاط...
+              {t.predCard.calcPoints}
             </div>
           )}
         </div>
       )}
 
-      {/* زر التأكيد */}
+      {/* Confirm button */}
       {!submitted && !isStarted && (
         <button
           onClick={handleSubmit}
           disabled={loading}
           className="mt-4 w-full btn-primary text-sm py-2.5 disabled:opacity-50"
         >
-          {loading ? 'جاري الحفظ...' : 'تأكيد التوقع'}
+          {loading ? t.predCard.savingBtn : t.predCard.confirmBtn}
         </button>
       )}
 
       {submitted && !isFinished && (
         <div className="mt-3">
           <p className="text-center text-xs text-slate-400 mb-2">
-            تم تسجيل توقعك ✓ — لا يمكن التعديل بعد الآن
+            {t.predCard.recordedMsg}
           </p>
           <div className="flex gap-2">
             <a
@@ -241,7 +237,7 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-black hover:bg-slate-900 text-white text-xs font-bold transition-colors border border-slate-600"
             >
               <span className="text-sm font-black">𝕏</span>
-              شارك
+              {t.predCard.shareTwitter}
             </a>
             <a
               href={whatsappUrl}
@@ -250,7 +246,7 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
               className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-green-700 hover:bg-green-600 text-white text-xs font-bold transition-colors"
             >
               <span className="text-sm">💬</span>
-              واتساب
+              {t.predCard.shareWhatsapp}
             </a>
           </div>
         </div>
@@ -258,7 +254,7 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
 
       {isStarted && !submitted && (
         <div className="mt-3 text-center text-xs text-red-400">
-          انطلقت المباراة — التوقع مغلق
+          {t.predCard.matchLocked}
         </div>
       )}
 

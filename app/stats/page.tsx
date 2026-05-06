@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { LEAGUES } from '@/lib/football-api';
 import { LeagueSelector } from '@/components/LeagueSelector';
+import { useT } from '@/hooks/useT';
 
 interface TopScorer {
   player: { id: number; name: string; photo: string; nationality: string };
@@ -15,6 +16,7 @@ interface TopScorer {
 }
 
 export default function StatsPage() {
+  const t = useT();
   const [selectedLeague, setSelectedLeague] = useState<number>(LEAGUES.SAUDI.id);
   const [topScorers, setTopScorers] = useState<TopScorer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,9 +43,9 @@ export default function StatsPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       <div className="flex items-center gap-3 mb-6">
-        <h1 className="text-2xl font-black text-white">الإحصائيات 📊</h1>
+        <h1 className="text-2xl font-black text-white">{t.stats.title}</h1>
         <span className="text-xs bg-blue-600/30 text-blue-400 border border-blue-600/50 px-2 py-1 rounded-full font-semibold">
-          موسم 2025/26
+          {t.stats.season}
         </span>
       </div>
 
@@ -54,7 +56,7 @@ export default function StatsPage() {
       ) : (
         <div className="card p-0 overflow-hidden">
           <div className="px-4 py-3 border-b border-slate-700">
-            <h2 className="font-bold text-white">ترتيب الهدافين</h2>
+            <h2 className="font-bold text-white">{t.stats.topScorers}</h2>
           </div>
           <div className="divide-y divide-slate-700/50">
             {topScorers.slice(0, 15).map((scorer, i) => {
@@ -90,11 +92,11 @@ export default function StatsPage() {
                   <div className="text-left">
                     <div className="text-base font-black text-white">
                       {stats?.goals?.total ?? 0}
-                      <span className="text-xs text-slate-400 font-normal mr-1">هدف</span>
+                      <span className="text-xs text-slate-400 font-normal mr-1">{t.stats.goals}</span>
                     </div>
                     {stats?.goals?.assists ? (
                       <div className="text-xs text-blue-400">
-                        {stats.goals.assists} تمريرة
+                        {stats.goals.assists} {t.stats.assists}
                       </div>
                     ) : null}
                   </div>

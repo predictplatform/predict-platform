@@ -7,6 +7,7 @@ import { LEAGUES, FixtureData } from '@/lib/football-api';
 import { LeagueSelector } from '@/components/LeagueSelector';
 import { Prediction } from '@/lib/supabase';
 import { useSearchParams } from 'next/navigation';
+import { useT } from '@/hooks/useT';
 
 type FilterStatus = 'all' | 'live' | 'upcoming' | 'finished';
 
@@ -27,6 +28,7 @@ function buildDates(offset: number): string[] {
 }
 
 function MatchesContent() {
+  const t = useT();
   const searchParams = useSearchParams();
   const initialLeague = searchParams.get('league') ? Number(searchParams.get('league')) : null;
   const { isSignedIn } = useUser();
@@ -91,18 +93,17 @@ function MatchesContent() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-4 pb-6">
-      <h1 className="text-2xl font-black text-white mb-4">المباريات</h1>
+      <h1 className="text-2xl font-black text-white mb-4">{t.matches.title}</h1>
 
       {/* ─── Sticky Filters ────────────────────────────────────────────── */}
       <div className="sticky top-16 z-40 bg-slate-900 -mx-4 px-4 pb-3">
 
-        {/* شريط التواريخ */}
+        {/* Date bar */}
         <div className="flex items-center gap-1 mb-0">
-          {/* سهم يمين (السابق) */}
           <button
             onClick={() => setDateOffset(o => o - 1)}
             className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors text-lg"
-            aria-label="الأيام السابقة"
+            aria-label={t.matches.prevDays}
           >
             ›
           </button>
@@ -115,8 +116,8 @@ function MatchesContent() {
               const isSelected = date === selectedDate;
               const d = new Date(date + 'T12:00:00');
               const dayNum = d.getDate();
-              const dayName = isToday ? 'اليوم' : isYesterday ? 'أمس' :
-                d.toLocaleDateString('ar-SA', { weekday: 'short' });
+              const dayName = isToday ? t.matches.today : isYesterday ? t.matches.yesterday :
+                d.toLocaleDateString(t.locale, { weekday: 'short' });
 
               return (
                 <button
@@ -146,11 +147,10 @@ function MatchesContent() {
             })}
           </div>
 
-          {/* سهم يسار (التالي) */}
           <button
             onClick={() => setDateOffset(o => o + 1)}
             className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors text-lg"
-            aria-label="الأيام القادمة"
+            aria-label={t.matches.nextDays}
           >
             ‹
           </button>
@@ -169,9 +169,17 @@ function MatchesContent() {
         {/* فاصل سفلي */}
         <div className="border-t border-slate-700/40 mt-2" />
 
-        {/* فلتر الحالة */}
+        {/* Status filter */}
         <div className="flex gap-2 pt-3">
-          {([['all', 'الكل'], ['live', '🔴 مباشر'], ['upcoming', 'القادمة'], ['finished', 'المنتهية']] as [FilterStatus, string][]).map(
+          {([[
+            'all',      t.matches.filterAll,
+          ], [
+            'live',     t.matches.filterLive,
+          ], [
+            'upcoming', t.matches.filterUpcoming,
+          ], [
+            'finished', t.matches.filterFinished,
+          ]] as [FilterStatus, string][]).map(
             ([val, label]) => (
               <button
                 key={val}
@@ -213,8 +221,8 @@ function MatchesContent() {
         ) : (
           <div className="card text-center py-16 text-slate-400">
             <p className="text-4xl mb-3">📅</p>
-            <p className="font-semibold">لا توجد مباريات في هذا اليوم</p>
-            <p className="text-sm mt-1 text-slate-500">للدوريات المدعومة: روشن، إنجليزي، إسباني، إيطالي، أبطال أوروبا</p>
+            <p className="font-semibold">{t.matches.noMatches}</p>
+            <p className="text-sm mt-1 text-slate-500">{t.matches.noMatchesHint}</p>
           </div>
         )}
       </div>
