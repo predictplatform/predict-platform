@@ -96,7 +96,7 @@ export function PredictionCard({ fixture, existingPrediction, onSubmit, stats }:
 
   const shareText = encodeURIComponent(
     lang === 'en'
-      ? `\u26BD\uFE0F I predicted: ${home} ${homeGoals} - ${awayGoals} ${away}\n\u{1F525} What's your prediction?\n\u{1F447}\uFE0F Compete with me on Dawri Al Tawaquat!\n${SITE_URL}`
+      ? `\u26BD\uFE0F I'm going with ${home} ${homeGoals} - ${awayGoals} ${away}\n\u{1F440} What's your pick?\n\u{1F525} Join Dawri Al Tawaquat & compete now!\n${SITE_URL}`
       : `\u26BD\uFE0F توقعت: ${home} ${homeGoals} - ${awayGoals} ${away}\n\u{1F525} وأنت وش توقعك؟\n\u{1F447}\uFE0F تنافس معي في دوري التوقعات\n${SITE_URL}`
   );
   const twitterUrl  = `https://twitter.com/intent/tweet?text=${shareText}`;
