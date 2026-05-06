@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import webpush from 'web-push';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import { getFixturesByDate, getHistoricalFixtures, FixtureData } from '@/lib/football-api';
+import { getFixtureById, FixtureData } from '@/lib/football-api';
 import { calculatePoints } from '@/lib/points';
 
 webpush.setVapidDetails(
@@ -35,13 +35,6 @@ function buildNotificationText(points: number): string {
   }
 }
 
-function toDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 // يُستدعى من Vercel Cron Job كل 30 دقيقة
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization') ?? '';
@@ -61,42 +54,32 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!pending || pending.length === 0) return NextResponse.json({ updated: 0 });
 
-  // ── جلب المباريات بالتاريخ لا بالـ ID ──────────────────────────────────────
-  // اليوم      → getFixturesByDate    (30 دق cache) — مشترك مع طلبات المستخدمين
-  // أيام سابقة → getHistoricalFixtures (ساعتان cache) — مباريات انتهت بالفعل
-  const today = new Date();
-  const todayStr = toDateStr(today);
-
-  const fixtureMap = new Map<string, FixtureData>();
-
-  // اليوم (30 دق cache)
-  try {
-    const fixtures = await getFixturesByDate(todayStr);
-    fixtures.forEach(f => fixtureMap.set(String(f.fixture.id), f));
-  } catch { /* skip */ }
-
-  // آخر 3 أيام (ساعتان cache) — للتوقعات التي لم تُحسب بعد
-  await Promise.allSettled(
-    Array.from({ length: 3 }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - (i + 1));
-      return toDateStr(d);
-    }).map(async (date) => {
-      try {
-        const fixtures = await getHistoricalFixtures(date);
-        fixtures.forEach(f => fixtureMap.set(String(f.fixture.id), f));
-      } catch { /* skip */ }
-    })
-  );
-  // ────────────────────────────────────────────────────────────────────────────
-
   type PredRow = {
     id: string; user_id: string; match_id: string;
     home_goals: number; away_goals: number;
     league_id: number | null; points_earned: number | null;
   };
 
+  // ── جلب كل مباراة مباشرة بـ ID — أكثر موثوقية من الجلب بالتاريخ ──────────
+  // • يتجنب مشاكل التايم زون ومحدودية الصفحات
+  // • كل fixture له cache entry مستقل بـ ID
+  // • أخطاء الـ API تظهر صريحة بدل أن تُبتلع بصمت
   const matchIds = Array.from(new Set(pending.map((p: PredRow) => p.match_id)));
+
+  const fixtureMap = new Map<string, FixtureData>();
+
+  const fetchResults = await Promise.allSettled(
+    matchIds.map(id => getFixtureById(Number(id)))
+  );
+
+  fetchResults.forEach((result, i) => {
+    if (result.status === 'fulfilled' && result.value) {
+      fixtureMap.set(matchIds[i], result.value);
+    }
+    // لو 'rejected' — نتجاهل هذا الـ match_id ونعالجه في الكرون القادم
+  });
+  // ────────────────────────────────────────────────────────────────────────────
+
   let updated = 0;
   let notified = 0;
   const affectedUsers = new Set<string>();
