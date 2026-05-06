@@ -36,19 +36,22 @@ export async function GET(
   if (!profile) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   // league_id مخزون في predictions — لا حاجة لاستدعاء Football API
+  // نجلب كل التوقعات (pending + settled) عشان total وpending يكونان دقيقين
   const { data: predictions } = await supabase
     .from('predictions')
     .select('points_earned, league_id')
-    .eq('user_id', profile.id)
-    .not('points_earned', 'is', null);
+    .eq('user_id', profile.id);
 
   const preds = predictions ?? [];
-  const correct = preds.filter(p => p.points_earned! > 0).length;
-  const wrong = preds.filter(p => p.points_earned === 0).length;
-  const accuracy = preds.length > 0 ? Math.round((correct / preds.length) * 100) : 0;
+  const settled = preds.filter(p => p.points_earned !== null);
+  const correct = settled.filter(p => p.points_earned! > 0).length;
+  const wrong = settled.filter(p => p.points_earned === 0).length;
+  const pending = preds.filter(p => p.points_earned === null).length;
+  const accuracy = settled.length > 0 ? Math.round((correct / settled.length) * 100) : 0;
 
+  // إحصائيات الدوري من المستقرة فقط (مثل profile/stats)
   const leagueStatsMap: Record<number, { total: number; correct: number; wrong: number }> = {};
-  for (const pred of preds) {
+  for (const pred of settled) {
     if (!pred.league_id) continue;
     const lid = pred.league_id;
     if (!leagueStatsMap[lid]) leagueStatsMap[lid] = { total: 0, correct: 0, wrong: 0 };
@@ -80,7 +83,7 @@ export async function GET(
     favorite_team: profile.favorite_team,
     total_points: profile.total_points,
     created_at: profile.created_at,
-    stats: { total: preds.length, correct, wrong, pending: 0, accuracy, byLeague },
+    stats: { total: preds.length, correct, wrong, pending, accuracy, byLeague },
   };
 
   return NextResponse.json(result, {

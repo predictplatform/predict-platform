@@ -77,6 +77,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
+  // league_id إلزامي — لو غاب تُفقد التوقع من إحصائيات الدوري
+  if (!league_id || !Number.isInteger(Number(league_id)) || Number(league_id) <= 0) {
+    return NextResponse.json({ error: 'league_id is required and must be a positive integer' }, { status: 400 });
+  }
+
   // تحقق من أن match_id عدد صحيح موجب
   const matchIdNum = Number(match_id);
   if (!Number.isInteger(matchIdNum) || matchIdNum <= 0) {
@@ -116,7 +121,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from('predictions')
     .upsert(
-      { user_id: userId, match_id, home_goals, away_goals, league_id: league_id ?? null },
+      { user_id: userId, match_id, home_goals, away_goals, league_id },
       { onConflict: 'user_id,match_id', ignoreDuplicates: false }
     )
     .select()
