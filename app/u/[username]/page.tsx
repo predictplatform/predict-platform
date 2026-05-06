@@ -173,7 +173,16 @@ export default function PublicProfilePage() {
       {stats.total === 0 && (
         <div className="card text-center py-12 text-slate-400">
           <p className="text-4xl mb-3">🎯</p>
-          <p>لم يسجل {profile.username} أي توقعات بعد</p>
+          {isOwnProfile ? (
+            <>
+              <p className="mb-4">لم تسجل أي توقعات بعد</p>
+              <Link href="/predict" className="btn-primary px-6 py-2 text-sm">
+                ابدأ التوقع الآن
+              </Link>
+            </>
+          ) : (
+            <p>لم يسجل {profile.username} أي توقعات بعد</p>
+          )}
         </div>
       )}
     </div>
