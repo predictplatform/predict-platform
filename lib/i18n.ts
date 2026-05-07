@@ -91,6 +91,8 @@ export const translations = {
       youLabel:    '(أنت)',
       remaining:   'باقي',
       noPlayers:   'لا يوجد لاعبون مؤهلون بعد. وصّل 10 توقعات لتدخل الترتيب! 🏆',
+      guestBanner: 'سجّل الآن وابدأ التوقع! 🏆',
+      guestBtn:    'إنشاء حساب',
     },
 
     // ── Leaderboard table ────────────────────────────────────────────────
@@ -341,6 +343,8 @@ export const translations = {
       youLabel:    '(You)',
       remaining:   'remaining',
       noPlayers:   'No qualified players yet. Make 10 predictions to join! 🏆',
+      guestBanner: 'Sign up now and start predicting! 🏆',
+      guestBtn:    'Create Account',
     },
 
     // ── Leaderboard table ────────────────────────────────────────────────
