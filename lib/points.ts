@@ -33,10 +33,10 @@ const LABELS: Record<Lang, Record<string, string>> = {
   },
   en: {
     pending:   'Pending',
-    exact:     'Exact result ⭐',
-    dirAndGap: 'Direction + goal diff ✅',
-    dirOnly:   'Correct direction 👍',
-    wrong:     'Completely wrong ❌',
+    exact:     'Exact score ⭐',
+    dirAndGap: 'Correct winner & goal diff ✅',
+    dirOnly:   'Correct winner 👍',
+    wrong:     'Wrong prediction ❌',
   },
 };
 

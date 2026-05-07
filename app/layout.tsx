@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import { PushInit } from '@/components/PushInit';
 import { ProfileSetupBanner } from '@/components/ProfileSetupBanner';
 import { LanguageProvider } from '@/contexts/LanguageContext';
+import { ClerkProviderWithLocale } from '@/components/ClerkProviderWithLocale';
 import FooterClient from '@/components/FooterClient';
 
 const SITE_URL = 'https://dawri-tawaquat.com';
@@ -66,80 +66,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider
-      appearance={{
-        variables: { colorPrimary: '#2563eb' },
-        elements: {
-          // إخفاء شارة "Development mode"
-          badge: { display: 'none' },
-        },
-      }}
-      localization={{
-        signIn: {
-          start: {
-            title: 'دوري التوقعات',
-            subtitle: 'أهلاً بعودتك!',
-            actionText: 'ما عندك حساب؟',
-            actionLink: 'سجّل الآن',
-          },
-        },
-        signUp: {
-          start: {
-            title: 'إنشاء حساب',
-            subtitle: 'أهلاً! أدخل رقم جوالك للبدء',
-            actionText: 'عندك حساب؟',
-            actionLink: 'سجّل دخولك',
-          },
-        },
-        userProfile: {
-          navbar: {
-            title:       'إدارة حسابك',
-            description: 'إدارة حسابك',
-            account:     'الملف الشخصي',
-            security:    'الأمان',
-          },
-          formButtonPrimary__add:    'إضافة',
-          formButtonPrimary__save:   'حفظ',
-          formButtonPrimary__finish: 'إنهاء',
-          formButtonReset:           'إلغاء',
-          start: {
-            headerTitle__account:  'إدارة حسابك',
-            headerTitle__security: 'الأمان',
-            profileSection: {
-              title:         'تفاصيل الملف',
-              primaryButton: 'تعديل الملف',
-            },
-            phoneNumbersSection: {
-              title:         'أرقام الجوال',
-              primaryButton: 'أضف رقم جوال',
-              detailsAction__primary:    'الرئيسي',
-              detailsAction__nonPrimary: 'اجعله رئيسياً',
-              detailsAction__unverified: 'تحقق',
-              destructiveAction:         'حذف',
-            },
-          },
-          profilePage: {
-            title: 'الملف الشخصي',
-          },
-          phoneNumberPage: {
-            title:        'أرقام الجوال',
-            verifyTitle:  'تحقق من رقم الجوال',
-            infoText:     'سيُرسل رمز تحقق على هذا الرقم',
-          },
-        },
-        userButton: {
-          action__manageAccount: 'إدارة الحساب',
-          action__signOut:       'تسجيل الخروج',
-          action__signOutAll:    'تسجيل الخروج من كل الأجهزة',
-        },
-        formFieldLabel__phoneNumber:            'رقم الجوال',
-        formFieldInputPlaceholder__phoneNumber: 'أدخل رقم جوالك',
-        formButtonPrimary: 'متابعة',
-      }}
-    >
-      <html lang="ar" dir="rtl">
-        <body>
-          <LanguageProvider>
+    <html lang="ar" dir="rtl">
+      <body>
+        {/* LanguageProvider خارج ClerkProviderWithLocale حتى يمكنه قراءة اللغة عبر useLang() */}
+        <LanguageProvider>
+          <ClerkProviderWithLocale>
             <Navbar />
             <ProfileSetupBanner />
             <PushInit />
@@ -148,9 +79,9 @@ export default function RootLayout({
             </main>
             <Analytics />
             <FooterClient />
-          </LanguageProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+          </ClerkProviderWithLocale>
+        </LanguageProvider>
+      </body>
+    </html>
   );
 }
