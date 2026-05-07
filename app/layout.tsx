@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import Script from 'next/script';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import { PushInit } from '@/components/PushInit';
@@ -79,6 +80,30 @@ export default function RootLayout({
             </main>
             <Analytics />
             <FooterClient />
+            {/* OTP auto-fill patch — يضيف autocomplete="one-time-code" على حقول Clerk */}
+            <Script id="clerk-otp-autocomplete" strategy="afterInteractive">{`
+              (function () {
+                function patch(root) {
+                  root.querySelectorAll(
+                    '.cl-otpCodeFieldInput, [data-otp-input-v2], input[inputmode="numeric"][maxlength="1"]'
+                  ).forEach(function (el) {
+                    if (el.getAttribute('autocomplete') !== 'one-time-code') {
+                      el.setAttribute('autocomplete', 'one-time-code');
+                    }
+                  });
+                }
+                var obs = new MutationObserver(function (mutations) {
+                  for (var i = 0; i < mutations.length; i++) {
+                    var added = mutations[i].addedNodes;
+                    for (var j = 0; j < added.length; j++) {
+                      if (added[j].nodeType === 1) patch(added[j]);
+                    }
+                  }
+                });
+                obs.observe(document.body, { childList: true, subtree: true });
+                patch(document);
+              })();
+            `}</Script>
           </ClerkProviderWithLocale>
         </LanguageProvider>
       </body>

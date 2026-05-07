@@ -48,6 +48,13 @@ body {
   }
 }
 
+/* Clerk OTP inputs — تلميح بصري للـ auto-fill */
+.cl-otpCodeFieldInput,
+input[data-otp-input-v2] {
+  /* يضمن ظهور لوحة مفاتيح رقمية على الجوال */
+  inputmode: numeric;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
