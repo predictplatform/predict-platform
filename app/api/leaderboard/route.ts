@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
-import type { Profile } from '@/lib/supabase';
 
-export type LeaderboardEntry = Profile & {
-  rank: number;
+// الحقول المكشوفة للعامة فقط — profile_complete مستبعد عمداً
+type LeaderboardProfile = {
+  id:            string;
+  username:      string;
+  avatar_url:    string | null;
+  total_points:  number;
+  favorite_team: string | null;
+  created_at:    string;
+};
+
+export type LeaderboardEntry = LeaderboardProfile & {
+  rank:                number;
   correct_predictions: number;
-  total_predictions: number;
-  accuracy_rate: number;
-  adjusted_points: number;
+  total_predictions:   number;
+  accuracy_rate:       number;
+  adjusted_points:     number;
 };
 
 type LeaderboardResponse = {
@@ -28,17 +37,17 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServerSupabaseClient();
 
-  // ① جلب الـ profiles
+  // ① جلب الـ profiles — حقول محددة فقط، profile_complete مستبعد
   const { data: profiles, error: profilesError } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, username, avatar_url, total_points, favorite_team, created_at')
     .limit(200);
 
   if (profilesError) {
     return NextResponse.json({ error: profilesError.message }, { status: 500 });
   }
 
-  const userIds = (profiles ?? []).map((p: Profile) => p.id);
+  const userIds = (profiles ?? []).map((p: LeaderboardProfile) => p.id);
   if (userIds.length === 0) {
     return NextResponse.json({ qualified: [], qualifying: [] } satisfies LeaderboardResponse);
   }
@@ -72,7 +81,7 @@ export async function GET(req: NextRequest) {
   });
 
   // ④ بناء الإدخالات
-  const entries: LeaderboardEntry[] = (profiles ?? []).map((p: Profile) => {
+  const entries: LeaderboardEntry[] = (profiles ?? []).map((p: LeaderboardProfile) => {
     const s = statsMap[p.id] ?? { total: 0, settled: 0, correct: 0, leaguePoints: 0 };
     const accuracy_rate   = s.settled > 0 ? s.correct / s.settled : 0;
     const basePoints      = selectedLeague === null ? p.total_points : s.leaguePoints;

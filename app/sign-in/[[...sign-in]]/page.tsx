@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 function patchOTPInputs() {
   document
     .querySelectorAll<HTMLInputElement>(
-      '.cl-otpCodeFieldInput, [data-otp-input-v2], input[inputmode="numeric"][maxlength="1"]'
+      '.cl-otpCodeFieldInput, [data-otp-input-v2]'
     )
     .forEach(el => {
       if (el.getAttribute('autocomplete') !== 'one-time-code') {

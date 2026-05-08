@@ -9,9 +9,11 @@ export async function GET() {
 
   const supabase = createServerSupabaseClient();
 
+  const PROFILE_FIELDS = 'id, username, avatar_url, total_points, favorite_team, profile_complete, created_at';
+
   let { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select(PROFILE_FIELDS)
     .eq('id', userId)
     .single();
 
@@ -31,7 +33,7 @@ export async function GET() {
         avatar_url: user?.imageUrl ?? null,
         total_points: 0,
       })
-      .select()
+      .select(PROFILE_FIELDS)
       .single();
 
     profile = newProfile;
@@ -55,7 +57,7 @@ export async function PATCH(req: NextRequest) {
     .from('profiles')
     .update({ username: username.trim() })
     .eq('id', userId)
-    .select()
+    .select('id, username, avatar_url, total_points, favorite_team, profile_complete, created_at')
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

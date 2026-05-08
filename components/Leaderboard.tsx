@@ -2,15 +2,21 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Profile } from '@/lib/supabase';
 import { useT } from '@/hooks/useT';
 
-export interface LeaderboardEntry extends Profile {
-  rank: number;
+// الحقول المطلوبة فقط — بدون profile_complete الذي لا يُعرض في الجدول
+export interface LeaderboardEntry {
+  id:                  string;
+  username:            string;
+  avatar_url:          string | null;
+  total_points:        number;
+  favorite_team:       string | null;
+  created_at:          string;
+  rank:                number;
   correct_predictions: number;
-  total_predictions: number;
-  accuracy_rate: number;
-  adjusted_points: number;
+  total_predictions:   number;
+  accuracy_rate:       number;
+  adjusted_points:     number;
 }
 
 interface Props {

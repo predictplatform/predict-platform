@@ -3,6 +3,9 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { createServerSupabaseClient } from '@/lib/supabase';
 import { getFixtureById } from '@/lib/football-api';
 
+// الدوريات المدعومة فقط
+const SUPPORTED_LEAGUE_IDS = new Set([944, 8, 564, 384, 82]);
+
 // الحالات التي تمنع التوقع (بدأت أو انتهت)
 const BLOCKED_STATUSES = new Set([
   '1H', 'HT', '2H', 'ET', 'BT', 'P', 'INT', 'LIVE',
@@ -77,9 +80,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  // league_id إلزامي — لو غاب تُفقد التوقع من إحصائيات الدوري
-  if (!league_id || !Number.isInteger(Number(league_id)) || Number(league_id) <= 0) {
+  // league_id إلزامي ومن الدوريات المدعومة فقط
+  const leagueIdNum = Number(league_id);
+  if (!league_id || !Number.isInteger(leagueIdNum) || leagueIdNum <= 0) {
     return NextResponse.json({ error: 'league_id is required and must be a positive integer' }, { status: 400 });
+  }
+  if (!SUPPORTED_LEAGUE_IDS.has(leagueIdNum)) {
+    return NextResponse.json({ error: 'league_id is not supported' }, { status: 400 });
   }
 
   // تحقق من أن match_id عدد صحيح موجب
