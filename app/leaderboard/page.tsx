@@ -8,6 +8,72 @@ import { LeagueSelector } from '@/components/LeagueSelector';
 import type { LeaderboardEntry } from '@/app/api/leaderboard/route';
 import { useT } from '@/hooks/useT';
 
+// ── Accordion: كيف تُحسب النقاط ─────────────────────────────────────────────
+function PointsAccordion() {
+  const t = useT();
+  const lb = t.leaderboard;
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border border-slate-700 rounded-xl overflow-hidden mb-6">
+      {/* Header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-slate-800/70 hover:bg-slate-700/60 transition-colors text-sm font-bold text-slate-200"
+      >
+        <span className="flex items-center gap-2">
+          <span>🧮</span>
+          {lb.pointsAccordionTitle}
+        </span>
+        <span className={`text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          ▾
+        </span>
+      </button>
+
+      {/* Body */}
+      {open && (
+        <div className="bg-slate-800/40 px-4 py-4 space-y-5 text-sm">
+
+          {/* النقاط الأساسية */}
+          <div>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">
+              {lb.pointsBasicTitle}
+            </p>
+            <div className="space-y-2">
+              {(lb.pointsRows as readonly { icon: string; pts: string; label: string; example: string }[]).map((row, i) => (
+                <div key={i} className="flex items-start gap-3 rounded-lg bg-slate-700/40 px-3 py-2">
+                  <span className="text-base shrink-0">{row.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-white font-semibold">{row.label}</span>
+                    {row.example && (
+                      <p className="text-slate-400 text-xs mt-0.5">{row.example}</p>
+                    )}
+                  </div>
+                  <span className="shrink-0 font-black text-amber-400 text-base">{row.pts}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* النقاط المعدّلة */}
+          <div>
+            <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">
+              {lb.pointsAdjTitle}
+            </p>
+            <div className="rounded-lg bg-blue-900/30 border border-blue-700/30 px-3 py-3 space-y-1.5">
+              <p className="text-blue-300 font-bold text-xs">{lb.pointsAdjFormula}</p>
+              <p className="text-slate-300 text-xs">{lb.pointsAdjExample}</p>
+              <p className="text-slate-400 text-xs border-t border-slate-700/50 pt-1.5 mt-1.5">{lb.pointsAdjDesc}</p>
+            </div>
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 export default function LeaderboardPage() {
   const t = useT();
   const { user, isLoaded } = useUser();
@@ -68,6 +134,9 @@ export default function LeaderboardPage() {
           </div>
         )}
       </div>
+
+      {/* نظام النقاط — Accordion */}
+      <PointsAccordion />
 
       {/* تصنيفات الدوريات */}
       <LeagueSelector

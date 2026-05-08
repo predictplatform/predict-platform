@@ -93,6 +93,20 @@ export const translations = {
       noPlayers:   'لا يوجد لاعبون مؤهلون بعد. وصّل 10 توقعات لتدخل الترتيب! 🏆',
       guestBanner: 'سجّل الآن وابدأ التوقع! 🏆',
       guestBtn:    'إنشاء حساب',
+
+      // ── Accordion نظام النقاط ─────────────────────────────────────────
+      pointsAccordionTitle: 'كيف يتم احتساب النقاط؟',
+      pointsBasicTitle:     'النقاط الأساسية',
+      pointsAdjTitle:       'النقاط المعدّلة',
+      pointsRows: [
+        { icon: '⭐', pts: '5', label: 'توقع النتيجة الدقيقة بالكامل',          example: 'توقعت 2-1 وانتهت 2-1' },
+        { icon: '✅', pts: '4', label: 'توقع الاتجاه وفارق الأهداف بشكل صحيح', example: 'توقعت 2-1 وانتهت 3-2' },
+        { icon: '👍', pts: '3', label: 'توقع الفائز أو اتجاه النتيجة فقط',      example: 'توقعت 2-1 وانتهت 3-1' },
+        { icon: '❌', pts: '0', label: 'توقع خاطئ بالكامل',                      example: '' },
+      ],
+      pointsAdjFormula: 'النقاط المعدّلة = مجموع نقاطك × (1 + نسبة الدقة)',
+      pointsAdjExample: 'مثال: 30 نقطة × 1.4 (دقة 40%) = 42 نقطة معدّلة',
+      pointsAdjDesc:    'هذا النظام يكافئ الدقة — المستخدم الأكثر دقة يتقدم على من يشارك بكثرة بدون دقة.',
     },
 
     // ── Leaderboard table ────────────────────────────────────────────────
@@ -345,6 +359,20 @@ export const translations = {
       noPlayers:   'No qualified players yet. Make 10 predictions to join! 🏆',
       guestBanner: 'Sign up now and start predicting! 🏆',
       guestBtn:    'Create Account',
+
+      // ── Points accordion ──────────────────────────────────────────────
+      pointsAccordionTitle: 'How are points calculated?',
+      pointsBasicTitle:     'Base Points',
+      pointsAdjTitle:       'Adjusted Points',
+      pointsRows: [
+        { icon: '⭐', pts: '5', label: 'Exact score prediction',           example: 'You predicted 2-1, result was 2-1' },
+        { icon: '✅', pts: '4', label: 'Correct winner & goal difference', example: 'You predicted 2-1, result was 3-2' },
+        { icon: '👍', pts: '3', label: 'Correct winner only',              example: 'You predicted 2-1, result was 3-1' },
+        { icon: '❌', pts: '0', label: 'Wrong prediction',                 example: '' },
+      ],
+      pointsAdjFormula: 'Adjusted Points = Total Points × (1 + Accuracy Rate)',
+      pointsAdjExample: 'Example: 30 pts × 1.4 (40% accuracy) = 42 adjusted points',
+      pointsAdjDesc:    'This system rewards accuracy — a precise predictor ranks above someone who predicts frequently but inaccurately.',
     },
 
     // ── Leaderboard table ────────────────────────────────────────────────
