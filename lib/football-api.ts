@@ -182,7 +182,7 @@ async function rawFetchAllTopScorers(endpoint: string): Promise<unknown[]> {
 
     if (doneGoals || !json.pagination?.has_more) break;
     page++;
-    if (page > 20) break; // سقف الأمان
+    if (page > 40) break; // سقف الأمان — type_id 208 يبدأ في ص22 (per_page مثبت عند 25)
   }
   return all;
 }
