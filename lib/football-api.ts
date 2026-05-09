@@ -157,33 +157,50 @@ async function rawFetchAllTopScorers(endpoint: string): Promise<unknown[]> {
   const sep = endpoint.includes('?') ? '&' : '?';
   let page = 1;
   const all: unknown[] = [];
-  let seenGoals  = false;   // رأينا type_id 208 في صفحة ما
-  let doneGoals  = false;   // انتهت type_id 208 وبدأت أنواع أخرى
+  let seenGoals  = false;
+  let doneGoals  = false;
+  let lastTypeId: number | undefined;
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const url  = `${BASE_URL}${endpoint}${sep}api_token=${API_TOKEN}&per_page=100&page=${page}`;
     const res  = await fetch(url, { cache: 'no-store' });
-    if (!res.ok) break;
+    if (!res.ok) {
+      console.log(`[TOPSCORERS] page=${page} HTTP ${res.status} — break`);
+      break;
+    }
     const json = await res.json() as {
       data?: Array<{ type_id?: number }>;
-      pagination?: { has_more?: boolean };
+      pagination?: { has_more?: boolean; per_page?: number };
     };
     const items = json.data ?? [];
-    if (items.length === 0) break;
 
-    const hasGoals  = items.some(i => i.type_id === 208);
-    const hasOther  = items.some(i => i.type_id !== undefined && i.type_id !== 208);
+    const typeIds  = [...new Set(items.map(i => i.type_id))];
+    const hasGoals = items.some(i => i.type_id === 208);
+    const hasOther = items.some(i => i.type_id !== undefined && i.type_id !== 208);
+    lastTypeId     = items[items.length - 1]?.type_id;
+
+    console.log(
+      `[TOPSCORERS] page=${page} | count=${items.length}` +
+      ` | per_page=${json.pagination?.per_page ?? '?'}` +
+      ` | types=${JSON.stringify(typeIds)}` +
+      ` | hasGoals=${hasGoals} | seenGoals=${seenGoals}` +
+      ` | has_more=${json.pagination?.has_more}`
+    );
+
+    if (items.length === 0) { console.log('[TOPSCORERS] empty page — break'); break; }
 
     if (hasGoals) seenGoals = true;
-    // بمجرد ما رأينا أهداف ثم انتهت في نفس الصفحة مع بداية نوع آخر، نوقف
     if (seenGoals && !hasGoals && hasOther) doneGoals = true;
 
     all.push(...items);
 
-    if (doneGoals || !json.pagination?.has_more) break;
+    if (doneGoals) { console.log(`[TOPSCORERS] doneGoals=true — break after page ${page}`); break; }
+    if (!json.pagination?.has_more) { console.log(`[TOPSCORERS] no more pages — break at page ${page}`); break; }
     page++;
-    if (page > 40) break; // سقف الأمان — type_id 208 يبدأ في ص22 (per_page مثبت عند 25)
+    if (page > 40) { console.log(`[TOPSCORERS] hit page limit 40 — break (lastType=${lastTypeId} seenGoals=${seenGoals})`); break; }
   }
+  const goalCount = all.filter((i: unknown) => (i as { type_id?: number }).type_id === 208).length;
+  console.log(`[TOPSCORERS] DONE — total=${all.length} | goals208=${goalCount} | seenGoals=${seenGoals}`);
   return all;
 }
 
