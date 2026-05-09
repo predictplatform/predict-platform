@@ -5,6 +5,8 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { LeaderboardTable } from '@/components/Leaderboard';
 import { LeagueSelector } from '@/components/LeagueSelector';
+import { SeasonSelector } from '@/components/SeasonSelector';
+import type { SeasonOption } from '@/components/SeasonSelector';
 import type { LeaderboardEntry } from '@/app/api/leaderboard/route';
 import { useT } from '@/hooks/useT';
 
@@ -76,21 +78,36 @@ function PointsAccordion() {
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function LeaderboardPage() {
   const t = useT();
+  const lb = t.leaderboard;
   const { user, isLoaded } = useUser();
+
   const [selectedLeague, setSelectedLeague] = useState<number | null>(null);
+  const [selectedSeason, setSelectedSeason] = useState<string | null>(null); // null = الموسم النشط
+  const [seasons,        setSeasons]        = useState<SeasonOption[]>([]);
+
   const [qualified,  setQualified]  = useState<LeaderboardEntry[]>([]);
   const [qualifying, setQualifying] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading,    setLoading]    = useState(true);
 
+  // ── جلب قائمة المواسم مرة واحدة ────────────────────────────────────
+  useEffect(() => {
+    fetch('/api/seasons')
+      .then(r => r.json())
+      .then((data: SeasonOption[]) => setSeasons(Array.isArray(data) ? data : []))
+      .catch(() => setSeasons([]));
+  }, []);
+
+  // ── جلب الليدربورد عند تغيير الدوري أو الموسم ─────────────────────
   useEffect(() => {
     const fetchLeaderboard = async () => {
       setLoading(true);
       try {
-        const url = selectedLeague !== null
-          ? `/api/leaderboard?league_id=${selectedLeague}`
-          : '/api/leaderboard';
+        const params = new URLSearchParams();
+        if (selectedLeague !== null) params.set('league_id', String(selectedLeague));
+        if (selectedSeason !== null) params.set('season_id',  selectedSeason);
+        // null = الموسم النشط → لا نرسل season_id والـ API يستخدم الافتراضي
 
-        const res  = await fetch(url);
+        const res  = await fetch(`/api/leaderboard?${params}`);
         const data = await res.json();
 
         setQualified(data.qualified   ?? []);
@@ -104,10 +121,19 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-  }, [selectedLeague]);
+  }, [selectedLeague, selectedSeason]);
 
   const myRank = qualified.findIndex(e => e.id === user?.id) + 1;
   const MIN    = selectedLeague !== null ? 5 : 10;
+
+  // عنوان الموسم المختار لعرضه
+  const activeSeason   = seasons.find(s => s.is_active);
+  const isAr           = t.dir === 'rtl';
+  const seasonLabel    = selectedSeason === 'all'
+    ? (isAr ? '🌐 كل المواسم' : '🌐 All Seasons')
+    : selectedSeason
+      ? (seasons.find(s => s.id === selectedSeason)?.[isAr ? 'name' : 'name_en'] ?? '')
+      : (activeSeason?.[isAr ? 'name' : 'name_en'] ?? '');
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6">
@@ -115,35 +141,61 @@ export default function LeaderboardPage() {
       {/* بانر الزائر غير المسجل */}
       {isLoaded && !user && (
         <div className="flex items-center justify-between gap-3 bg-blue-600/20 border border-blue-500/40 rounded-xl px-4 py-3 mb-6">
-          <p className="text-sm font-bold text-blue-300">{t.leaderboard.guestBanner}</p>
+          <p className="text-sm font-bold text-blue-300">{lb.guestBanner}</p>
           <Link
             href="/sign-up"
             className="shrink-0 bg-blue-600 hover:bg-blue-500 transition-colors text-white text-xs font-black px-4 py-2 rounded-lg"
           >
-            {t.leaderboard.guestBtn}
+            {lb.guestBtn}
           </Link>
         </div>
       )}
 
+      {/* رأس الصفحة */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-black text-white">{t.leaderboard.title}</h1>
-        {myRank > 0 && (
-          <div className="card py-2 px-4 text-sm">
-            <span className="text-slate-400">{t.leaderboard.yourRank} </span>
-            <span className="font-black text-blue-400 text-lg">#{myRank}</span>
-          </div>
-        )}
+        <div>
+          <h1 className="text-2xl font-black text-white">{lb.title}</h1>
+          {seasonLabel && (
+            <p className="text-xs text-slate-400 mt-0.5">{seasonLabel}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {myRank > 0 && (
+            <div className="card py-2 px-4 text-sm">
+              <span className="text-slate-400">{lb.yourRank} </span>
+              <span className="font-black text-blue-400 text-lg">#{myRank}</span>
+            </div>
+          )}
+          {/* رابط الأرشيف */}
+          <Link
+            href="/seasons"
+            className="text-xs text-slate-400 hover:text-slate-200 transition-colors"
+            title={isAr ? 'أرشيف المواسم' : 'Season Archive'}
+          >
+            📅
+          </Link>
+        </div>
       </div>
 
       {/* نظام النقاط — Accordion */}
       <PointsAccordion />
+
+      {/* فلتر الموسم */}
+      {seasons.length > 0 && (
+        <SeasonSelector
+          seasons={seasons}
+          selected={selectedSeason}
+          onChange={setSelectedSeason}
+          className="mb-3"
+        />
+      )}
 
       {/* تصنيفات الدوريات */}
       <LeagueSelector
         selected={selectedLeague}
         onChange={setSelectedLeague}
         withAll
-        allLabel={t.leaderboard.allLabel}
+        allLabel={lb.allLabel}
         className="mb-6"
       />
 
@@ -213,17 +265,17 @@ export default function LeaderboardPage() {
           {/* في طور التأهل */}
           {qualifying.length > 0 && (
             <div className="mt-8">
-              <h2 className="text-base font-black text-slate-300 mb-1">{t.leaderboard.qualifying}</h2>
+              <h2 className="text-base font-black text-slate-300 mb-1">{lb.qualifying}</h2>
               <p className="text-xs text-slate-500 mb-4">
-                {t.leaderboard.qualifyingDesc} {MIN} {t.leaderboard.qualifyingDesc2}
+                {lb.qualifyingDesc} {MIN} {lb.qualifyingDesc2}
               </p>
               <div className="card p-0 overflow-hidden opacity-75">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-slate-400 text-xs border-b border-slate-700 bg-slate-800/60">
-                      <th className="py-3 px-4 text-right">{t.leaderboard.colUser}</th>
-                      <th className="py-3 px-4 text-center">{t.leaderboard.colPreds}</th>
-                      <th className="py-3 px-4 text-center">{t.leaderboard.colRemaining}</th>
+                      <th className="py-3 px-4 text-right">{lb.colUser}</th>
+                      <th className="py-3 px-4 text-center">{lb.colPreds}</th>
+                      <th className="py-3 px-4 text-center">{lb.colRemaining}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -241,7 +293,7 @@ export default function LeaderboardPage() {
                               </div>
                               <span className={`font-semibold ${isCurrentUser ? 'text-blue-400' : 'text-white'}`}>
                                 {entry.username}
-                                {isCurrentUser && <span className="text-xs text-slate-400 mr-1">{t.leaderboard.youLabel}</span>}
+                                {isCurrentUser && <span className="text-xs text-slate-400 mr-1">{lb.youLabel}</span>}
                               </span>
                             </Link>
                           </td>
@@ -249,7 +301,7 @@ export default function LeaderboardPage() {
                             {entry.total_predictions}/{MIN}
                           </td>
                           <td className="py-3 px-4 text-center text-amber-400 font-bold text-xs">
-                            {t.leaderboard.remaining} {remaining}
+                            {lb.remaining} {remaining}
                           </td>
                         </tr>
                       );

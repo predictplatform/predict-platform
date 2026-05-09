@@ -32,5 +32,19 @@ export type Prediction = {
   away_goals: number;
   points_earned: number | null;
   league_id: number | null;
+  season_id: string | null;
+  created_at: string;
+};
+
+export type Season = {
+  id: string;
+  name: string;                        // العربي
+  name_en: string;                     // الإنجليزي
+  start_date: string;
+  end_date: string | null;             // null = موسم جارٍ
+  is_active: boolean;
+  winner_user_id: string | null;
+  winner_username: string | null;
+  winner_adjusted_points: number | null;
   created_at: string;
 };

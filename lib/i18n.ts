@@ -262,6 +262,25 @@ export const translations = {
       german:     'ألماني',
     },
 
+    // ── Seasons (archive page + selector) ────────────────────────────────
+    seasons: {
+      selectorLabel:  'الموسم:',
+      allSeasons:     '🌐 كل المواسم',
+      currentBadge:   '★ الحالي',
+      archiveLink:    'أرشيف المواسم 📅',
+      pageTitle:      'أرشيف المواسم 📅',
+      pageSubtitle:   'جميع المواسم مع الفائزين والترتيب التاريخي',
+      backBtn:        '← الليدربورد',
+      currentLabel:   'جارٍ',
+      latestLabel:    'الأحدث',
+      presentLabel:   'حتى الآن',
+      viewStandings:  'عرض الترتيب الحالي ←',
+      inProgress:     'الموسم لم ينته بعد',
+      noWinner:       'لم يُحدد فائز',
+      noSeasons:      'لا توجد مواسم بعد',
+      ptsLabel:       'نقطة',
+    },
+
     // ── Locale ────────────────────────────────────────────────────────────
     locale: 'ar-SA',
     dir: 'rtl' as 'rtl' | 'ltr',
@@ -526,6 +545,25 @@ export const translations = {
       spanish:    'La Liga',
       italian:    'Serie A',
       german:     'Bundesliga',
+    },
+
+    // ── Seasons (archive page + selector) ────────────────────────────────
+    seasons: {
+      selectorLabel:  'Season:',
+      allSeasons:     '🌐 All Seasons',
+      currentBadge:   '★ Current',
+      archiveLink:    'Season Archive 📅',
+      pageTitle:      'Season Archive 📅',
+      pageSubtitle:   'All seasons with their champions and historical rankings',
+      backBtn:        '← Leaderboard',
+      currentLabel:   'Current',
+      latestLabel:    'Latest',
+      presentLabel:   'Present',
+      viewStandings:  'View Current Standings →',
+      inProgress:     'Season in progress',
+      noWinner:       'No winner recorded',
+      noSeasons:      'No seasons yet',
+      ptsLabel:       'pts',
     },
 
     // ── Locale ────────────────────────────────────────────────────────────
