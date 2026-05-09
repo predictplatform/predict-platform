@@ -12,7 +12,7 @@ const TTL = {
 } as const;
 
 // يُضاف لكل cache key — غيّره في Vercel env vars لمسح الكاش فوراً
-const CV = process.env.CACHE_VERSION ?? 'v1';
+const CV = process.env.CACHE_VERSION ?? 'v2';
 
 // حالات المباريات الحية
 const LIVE_STATUSES = new Set(['1H', 'HT', '2H', 'ET', 'P', 'BT', 'LIVE']);
@@ -150,6 +150,43 @@ async function rawFetchAll(endpoint: string): Promise<unknown[]> {
   return all;
 }
 
+// paginator مخصص للهدافين — per_page=100 وحد أعلى 20 صفحة
+// الهدف: اختراق صفحات البطاقات (83/84) والوصول للأهداف (type_id 208)
+// ويتوقف تلقائياً بعد آخر صفحة تحتوي على type_id 208
+async function rawFetchAllTopScorers(endpoint: string): Promise<unknown[]> {
+  const sep = endpoint.includes('?') ? '&' : '?';
+  let page = 1;
+  const all: unknown[] = [];
+  let seenGoals  = false;   // رأينا type_id 208 في صفحة ما
+  let doneGoals  = false;   // انتهت type_id 208 وبدأت أنواع أخرى
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const url  = `${BASE_URL}${endpoint}${sep}api_token=${API_TOKEN}&per_page=100&page=${page}`;
+    const res  = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) break;
+    const json = await res.json() as {
+      data?: Array<{ type_id?: number }>;
+      pagination?: { has_more?: boolean };
+    };
+    const items = json.data ?? [];
+    if (items.length === 0) break;
+
+    const hasGoals  = items.some(i => i.type_id === 208);
+    const hasOther  = items.some(i => i.type_id !== undefined && i.type_id !== 208);
+
+    if (hasGoals) seenGoals = true;
+    // بمجرد ما رأينا أهداف ثم انتهت في نفس الصفحة مع بداية نوع آخر، نوقف
+    if (seenGoals && !hasGoals && hasOther) doneGoals = true;
+
+    all.push(...items);
+
+    if (doneGoals || !json.pagination?.has_more) break;
+    page++;
+    if (page > 20) break; // سقف الأمان
+  }
+  return all;
+}
+
 // ─── Cached fetchers (unstable_cache يمنع thundering herd) ───────────────────
 
 const _cachedFixturesByDate = unstable_cache(
@@ -195,8 +232,8 @@ const _cachedStandings = unstable_cache(
 
 const _cachedTopScorers = unstable_cache(
   async (seasonId: number): Promise<unknown[]> =>
-    rawFetchAll(
-      `/topscorers/seasons/${seasonId}?include=player;participant&per_page=20`
+    rawFetchAllTopScorers(
+      `/topscorers/seasons/${seasonId}?include=player;participant`
     ),
   [`sm-topscorers-${CV}`],
   { revalidate: TTL.TOPSCORERS }
@@ -293,13 +330,20 @@ export async function getStandings(leagueId: number, _season?: number) {
 }
 
 // ─── Top Scorers ──────────────────────────────────────────────────────────────
+// type_id 208 = GOAL_TOPSCORER (المصدر الصحيح للهدافين في Sportmonks)
+// الـ endpoint يخلط أنواعاً متعددة: 83=بطاقات حمراء، 84=صفراء، 208=أهداف
+const GOAL_TOPSCORER_TYPE = 208;
+
 export async function getTopScorers(leagueId: number, _season?: number) {
   const seasonId = CURRENT_SEASON[leagueId];
   if (!seasonId) return [];
 
   const raw = await _cachedTopScorers(seasonId) as SmRawTopScorer[];
 
-  return raw
+  // فلترة للأهداف فقط (type_id 208) ثم ترتيب تنازلي
+  const goalScorers = raw.filter(s => s.type_id === GOAL_TOPSCORER_TYPE);
+
+  return goalScorers
     .sort((a, b) => (b.total ?? 0) - (a.total ?? 0))
     .map(s => ({
       player: {
@@ -424,7 +468,7 @@ type SmRawStanding = {
 type SmRawTopScorer = {
   player_id: number;
   participant_id: number;
-  type_id?: number;   // 52 = Goals | 79 = Assists | 84 = YellowCards …
+  type_id?: number;   // 208 = GOAL_TOPSCORER | 83 = Redcards | 84 = Yellowcards | 209 = Assists …
   total: number;
   player?: {
     id: number;
