@@ -262,6 +262,16 @@ export const translations = {
       german:     'ألماني',
     },
 
+    // ── World Cup 2026 Countdown ──────────────────────────────────────────
+    worldCup: {
+      title:    'كأس العالم 2026',
+      subtitle: 'الانطلاق — 11 يونيو 2026',
+      days:     'يوم',
+      hours:    'ساعة',
+      minutes:  'دقيقة',
+      seconds:  'ثانية',
+    },
+
     // ── Seasons (archive page + selector) ────────────────────────────────
     seasons: {
       selectorLabel:  'الموسم:',
@@ -545,6 +555,16 @@ export const translations = {
       spanish:    'La Liga',
       italian:    'Serie A',
       german:     'Bundesliga',
+    },
+
+    // ── World Cup 2026 Countdown ──────────────────────────────────────────
+    worldCup: {
+      title:    'FIFA World Cup 2026',
+      subtitle: 'Kicks off — June 11, 2026',
+      days:     'Days',
+      hours:    'Hours',
+      minutes:  'Mins',
+      seconds:  'Secs',
     },
 
     // ── Seasons (archive page + selector) ────────────────────────────────

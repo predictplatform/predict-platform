@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { MatchCard } from '@/components/MatchCard';
 import { LeagueSelector } from '@/components/LeagueSelector';
+import { WorldCupCountdown } from '@/components/WorldCupCountdown';
 import { useT } from '@/hooks/useT';
 import type { FixtureData } from '@/lib/football-api';
 
@@ -41,6 +42,9 @@ export function HomeClient({ fixtures, predMap }: HomeClientProps) {
             {t.home.leaderboardBtn}
           </Link>
         </div>
+
+        {/* عداد كأس العالم 2026 */}
+        <WorldCupCountdown />
       </section>
 
       {/* نظام النقاط */}
